@@ -1,0 +1,144 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.1.5
+  kernelspec:
+    display_name: Python 2
+    language: python
+    name: python2
+---
+
+```{python}
+#try to get quandratic surface equation for mirrors for given xyz points
+#create new coordinate system for grasp tor file
+import pandas as pd
+import numpy as np
+import os
+from scipy.optimize import curve_fit
+#load to xyz data for a mirror
+mfile = '2689M1.sfc'
+data = pd.read_csv(mfile, sep=" ", header=None, skiprows=2)
+data.columns = ["x", "y", "z"]
+data=data/1000
+#print data.T.shape
+#print data['x'].shape
+#
+def discriminant(a, b, c):
+    """
+    Returns the discriminant of a quadratic polynomial
+    a * x**2 + b * x + c = 0.    
+    """
+    delta = abs(b**2 - 4.0*a*c)
+#     print "delta", delta
+#     if delta.all() < 0.0:
+#         delta = abs(b**2 - 4.0 * a * c)
+    return delta
+
+def quadratic((x, y), a, b, c, d, e, f, g, h, i, j):
+    n = c
+    m = e*x + f*y + i
+    k = a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j
+    
+    delta = discriminant(n, m, k)
+    
+    z1 = - m + np.sqrt(delta) / 2.0*n
+    z2 = - m - np.sqrt(delta) / 2.0*n
+    #print z1.shape
+    return z1
+
+
+initial_guess = (-0.0027, -0.0027, -7e-5, 0, 0, 0, 0, 0, -0.001, -1e-6)
+#initial_guess = (0,0,0,0,0,0,0,0,0,0)
+
+popt, pcov = curve_fit(quadratic, (data['x'],data['y']), data['z'], p0=initial_guess, maxfev=5000)
+print popt
+print pcov
+```
+
+```{python}
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+#plot raw data
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax = plt.axes(projection='3d')
+ax.scatter(data['x'],data['y'], data['z'], cmap='viridis', linewidth=0.1);
+
+```
+
+```{python}
+data_fitted = quadratic((data['x'],data['y']), *popt)
+print data_fitted.shape
+#print popt, pcov      
+# %matplotlib notebook
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax = plt.axes(projection='3d')
+ax.plot_trisurf(data['x'],data['y'], data_fitted,cmap='viridis', linewidth=0.1);
+```
+
+```{python}
+#difference plot
+diff = data['z'] - data_fitted
+print max(abs(diff))
+#print popt, pcov
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax = plt.axes(projection='3d')
+ax.plot_trisurf(data['x'],data['y'], diff, cmap='viridis', linewidth=0.1);
+```
+
+```{python}
+initial_guess = (-0.0027, -0.0027, -7e-5, 0, 0, 0, 0, 0, -0.001, -1e-6)
+initial_guess = (-0.0027, -0.0027, -7e-5, 1e-23, 4e-21, 1e-22, 5.6e-19, 1.7e-20, -0.0018, -1e-6)
+data_fitted = quadratic((data['x'],data['y']), *initial_guess)
+print data_fitted.shape, data['x'].shape
+#print popt, pcov      
+# %matplotlib notebook
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax.plot_trisurf(data['x'],data['y'], data_fitted,cmap='viridis', linewidth=0.1);
+ax.scatter(data['x'],data['y'], data['z'], cmap='viridis', linewidth=None, s=2);
+```
+
+```{python}
+def twoD_Gauss((x,y),amplitude,x0,y0,sigma_x,sigma_y,offset):
+    x0=float(x0)
+    y0=float(y0)
+    return offset + amplitude*np.exp(-(((x-x0)**(2)/(2*sigma_x**(2))) + ((y-y0)**(2)/(2*sigma_y**(2)))))
+
+x = np.linspace(-150,150,300)
+y = np.linspace(-150,150,300)
+x,y = np.meshgrid(x,y)
+data2 = twoD_Gauss((x,y), 131350,0,0,50,50,0)
+print data2.shape, x.shape
+plt.figure()
+plt.imshow(data2.reshape(300,300))
+plt.colorbar()
+plt.show()
+```
+
+```{python}
+def twoD_Gauss((x,y),amplitude,x0,y0,sigma_x,sigma_y,offset):
+    x0=float(x0)
+    y0=float(y0)
+    return offset + amplitude*np.exp(-(((x-x0)**(2)/(2*sigma_x**(2))) + ((y-y0)**(2)/(2*sigma_y**(2)))))
+
+x = np.linspace(-150,150,300)
+y = np.linspace(-150,150,300)
+x,y = np.meshgrid(x,y)
+data2 = twoD_Gauss((x,y), 131350,0,0,50,50,0)
+print x.shape, data2.shape
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax.plot_trisurf(x, y, data2.reshape(300,300), cmap='viridis', linewidth=0.1);
+#ax.scatter(x, y data2, cmap='viridis', linewidth=None, s=2);
+```
+
+```{python}
+
+```
