@@ -1,0 +1,73 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.1.5
+  kernelspec:
+    display_name: Python 2
+    language: python
+    name: python2
+---
+
+```{python}
+#test 2d code before using 3d data
+from scipy.spatial import ConvexHull, convex_hull_plot_2d
+import numpy as np
+points = np.random.rand(30, 2)   # 30 random points in 2-D
+hull = ConvexHull(points)
+```
+
+```{python}
+import matplotlib.pyplot as plt
+plt.plot(points[:,0], points[:,1], 'o')
+for simplex in hull.simplices:
+    plt.plot(points[simplex, 0], points[simplex, 1], 'k-')
+plt.show
+```
+
+```{python}
+data = np.loadtxt('2689M1.sfc',skiprows=2)
+print data.shape
+plt.plot(data[:,0], data[:,1], 'o')
+```
+
+```{python}
+fig=plt.figure(figsize=(15, 15))
+plt.plot(data[:,0], data[:,1], 'o')
+
+hull = ConvexHull(data[:,0:2])
+for simplex in hull.simplices:
+    plt.plot(data[simplex, 0], data[simplex, 1], 'k-')
+    
+```
+
+```{python}
+plt.close('all')
+```
+
+```{python}
+fig=plt.figure(figsize=(15, 15))
+# #%matplotlib qt
+# #%matplotlib inline
+plt.plot(data[:,0], data[:,1], 'o', markersize=1.5)
+
+hull = ConvexHull(data[:,0:3], incremental=True)
+for simplex in hull.simplices:
+    plt.plot(data[simplex, 0], data[simplex, 1], 'k-')
+```
+
+```{python}
+#add "corners" to hull
+print hull.simplices.shape
+#print hull.simplices
+print data[hull.simplices,:].shape
+print data[hull.simplices,:]
+
+```
+
+```{python}
+
+```
