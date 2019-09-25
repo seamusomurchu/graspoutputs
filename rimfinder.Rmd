@@ -50,22 +50,93 @@ plt.close('all')
 
 ```{python}
 fig=plt.figure(figsize=(15, 15))
-# #%matplotlib qt
+# %matplotlib qt
 # #%matplotlib inline
 plt.plot(data[:,0], data[:,1], 'o', markersize=1.5)
 
-hull = ConvexHull(data[:,0:3], incremental=True)
+hull = ConvexHull(data[:,0:2], incremental=True)
 for simplex in hull.simplices:
     plt.plot(data[simplex, 0], data[simplex, 1], 'k-')
+    #print data[simplex, 0]
+plt.plot(data[hull.simplices[1], 0], data[hull.simplices[1], 1], 'k-', color='red')  
+print data[hull.simplices[1], 0], data[hull.simplices[1], 1]
+print data[hull.simplices[1, 0], 0], data[hull.simplices[1, 0], 1]
 ```
 
 ```{python}
 #add "corners" to hull
 print hull.simplices.shape
-#print hull.simplices
+print hull.simplices[0,:]
+print data.shape#[3410,3415]
 print data[hull.simplices,:].shape
-print data[hull.simplices,:]
+#print data[hull.simplices,0]
+#print data[hull.simplices,1]
+#print data[hull.simplices,2]
+#print hull.vertices[0]
+#print data[hull.vertices[0]]
+#print data[hull.vertices[1]]
 
+#make array with physical outerpoints
+print data[hull.simplices[1, 0], 0], data[hull.simplices[1, 0], 1]
+print data[hull.simplices[:, 0], 0].shape, data[hull.simplices[:, 0], 1].shape
+rimpoints = np.vstack((data[hull.simplices[:, 0], 0], data[hull.simplices[:, 0], 1])).T
+print rimpoints.shape
+# %matplotlib inline
+plt.plot(rimpoints[:,0], rimpoints[:,1], '.')
+plt.show()
+```
+
+```{python}
+#  == METHOD 2 ==
+#this is actually for circle so kind of pointless
+x = rimpoints[:,0]
+y = rimpoints[:,1]
+x_m = np.mean(rimpoints[:,0])
+y_m = np.mean(rimpoints[:,1])
+from scipy      import optimize
+
+method_2 = "leastsq"
+
+def calc_R(xc, yc):
+    """ calculate the distance of each 2D points from the center (xc, yc) """
+    return np.sqrt((x-xc)**2 + (y-yc)**2)
+
+def f_2(c):
+    """ calculate the algebraic distance between the data points and the mean circle centered at c=(xc, yc) """
+    Ri = calc_R(*c)
+    return Ri - Ri.mean()
+
+center_estimate = x_m, y_m
+center_2, ier = optimize.leastsq(f_2, center_estimate)
+
+xc_2, yc_2 = center_2
+Ri_2       = calc_R(*center_2)
+R_2        = Ri_2.mean()
+residu_2   = sum((Ri_2 - R_2)**2)
+print xc_2, yc_2, R_2
+```
+
+```{python}
+#since rim is symmetric about axes.
+#some fudge factors in here
+x = rimpoints[:,0]
+y = rimpoints[:,1]
+xcen = (min(x)+max(x)+5) / 2
+#ycen = (min(y) + max(y)) / 2
+ycen = 0
+width = max(x)+5 - min(x)
+height = max(y)+5 - min(y)+5
+#print width, height
+
+from matplotlib.patches import Ellipse
+from matplotlib import patches
+
+ells = patches.Ellipse((xcen, ycen), width, height, 0, linewidth=2, fill=False)
+print ells
+fig, ax = plt.subplots(figsize=(15, 15))
+ax.add_patch(ells)
+plt.plot(rimpoints[:,0], rimpoints[:,1], '.')
+plt.show()
 ```
 
 ```{python}
