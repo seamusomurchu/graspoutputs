@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 plt.plot(points[:,0], points[:,1], 'o')
 for simplex in hull.simplices:
     plt.plot(points[simplex, 0], points[simplex, 1], 'k-')
-plt.show
+plt.show()
 ```
 
 ```{python}
@@ -135,7 +135,51 @@ ells = patches.Ellipse((xcen, ycen), width, height, 0, linewidth=2, fill=False)
 print ells
 fig, ax = plt.subplots(figsize=(15, 15))
 ax.add_patch(ells)
+ax.axis('equal')
 plt.plot(rimpoints[:,0], rimpoints[:,1], '.')
+plt.show()
+```
+
+```{python}
+# attempting a more general solution
+x = rimpoints[:,0]
+y = rimpoints[:,1]
+xmax = max(x)
+xmin = min(x)
+ymax = max(y)
+ymin = min(y)
+#a, b major minor axes
+a = (ymax - ymin) / 2
+b = (xmax - xmin) / 2
+#h, k ellipse centre
+h = xmax - b
+k = ymax - a
+print "known params", a, b, h, k
+
+xvals = np.linspace(xmin,xmax,450)
+#print xvals
+#return y value of elleipse for given x value
+def EllipseYvals(a, b, h, k, x):
+    return np.sqrt(a**2 * (1 - ((x-h)**2)/b**2)) + k
+#call function and add y values to array
+yarr = np.array([])
+for x in enumerate(xvals):
+    yval = EllipseYvals(a, b, h, k, x[1])
+    yarr = np.append(yarr,yval)
+    print x[1],yval
+#print yarr.shape, xvals.shape
+
+```
+
+```{python}
+ells = patches.Ellipse((h, k), b*2, a*2, 0, linewidth=2, fill=False)
+print ells
+fig, ax = plt.subplots(figsize=(15, 15))
+ax.add_patch(ells)
+ax.axis('equal')
+plt.plot(rimpoints[:,0], rimpoints[:,1], '.')
+plt.plot(xvals, yarr, 'r+')
+plt.plot(xvals, yarr*-1.0, 'r+')
 plt.show()
 ```
 
