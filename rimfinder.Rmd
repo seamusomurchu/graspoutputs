@@ -35,6 +35,8 @@ plt.plot(data[:,0], data[:,1], 'o')
 ```
 
 ```{python}
+# %matplotlib qt
+
 fig=plt.figure(figsize=(15, 15))
 plt.plot(data[:,0], data[:,1], 'o')
 
@@ -144,10 +146,10 @@ plt.show()
 # attempting a more general solution
 x = rimpoints[:,0]
 y = rimpoints[:,1]
-xmax = max(x)
+xmax = max(x)+5
 xmin = min(x)
-ymax = max(y)
-ymin = min(y)
+ymax = max(y)+5
+ymin = min(y)-5
 #a, b major minor axes
 a = (ymax - ymin) / 2
 b = (xmax - xmin) / 2
@@ -166,7 +168,7 @@ yarr = np.array([])
 for x in enumerate(xvals):
     yval = EllipseYvals(a, b, h, k, x[1])
     yarr = np.append(yarr,yval)
-    print x[1],yval
+    #print x[1],yval
 #print yarr.shape, xvals.shape
 
 ```
@@ -180,6 +182,63 @@ ax.axis('equal')
 plt.plot(rimpoints[:,0], rimpoints[:,1], '.')
 plt.plot(xvals, yarr, 'r+')
 plt.plot(xvals, yarr*-1.0, 'r+')
+plt.show()
+```
+
+```{python}
+#find closest points in file
+#takes x,y input from data file
+#finds closest point in file
+data = np.loadtxt('2689M1.sfc',skiprows=2)
+#xp, yp = 357.6, 220.0
+#xp, yp = 348.5, 228.1
+#xp, yp = 355.5, 232.2
+
+#xp, yp = 347.1, -236.7
+#xp, yp = 356.9, -223.2
+#xp, yp = 356.2, -236.7
+
+#xp, yp = 53.0, 241.9
+#xp, yp = 53.9, 249.9
+#xp, yp = 62.3, 247.2
+
+#xp, yp = 52.9, -245.0
+#xp, yp = 53.9, -253.1
+#xp, yp = 61.2, -250.4
+print xp, yp, data.shape
+
+def points_distance(x1, y1, x2, y2):
+    return np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
+distarr = np.array([])
+distind = np.array([])
+for i in range(len(data[:,0])):
+    dist = points_distance(xp, yp, data[i,0], data[i,1])
+    distarr = np.append(distarr, dist)
+    distind = np.append(distind, i)
+distarr = np.vstack((distind, distarr)).T
+for j in range(len(distarr[:,0])):
+    if distarr[j,1] == min(distarr[:,1]):
+        print distarr[j,0:2]
+        minindex = int(distarr[j,0])
+print minindex, data[minindex,:]
+```
+
+```{python}
+#plot new lips
+lips = np.loadtxt('rimlips.txt', skiprows=0)
+print lips.shape
+```
+
+```{python}
+# %matplotlib inline
+fig, ax = plt.subplots(figsize=(15, 15))
+#ax.add_patch(ells)
+ax.axis('equal')
+plt.plot(rimpoints[:,0], rimpoints[:,1], '.')
+plt.plot(xvals, yarr, 'r+')
+plt.plot(xvals, yarr*-1.0, 'r+')
+plt.plot(lips[:,0], lips[:,1], 'g*')
 plt.show()
 ```
 
