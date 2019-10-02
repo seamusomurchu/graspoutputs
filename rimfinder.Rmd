@@ -243,5 +243,27 @@ plt.show()
 ```
 
 ```{python}
+xvalarr = np.append(xvals,xvals)
+yvalarr = np.append(yarr,yarr*-1.0)
+rimarr = np.vstack((xvalarr, yvalarr)).T
+print rimarr.shape
+np.savetxt('values.txt', rimarr, fmt='%03.3f')
+#manually added lips and deleted rim region around the lips
+```
+
+```{python}
+from __future__ import division
+filepath = "valueswithlips.txt"
+filepath2 = "valueswithlipsandline.txt"
+with open(filepath) as fp:
+    lines = fp.read().splitlines()
+    
+with open(filepath2, "w") as fp:
+    for line in lines:
+        line = 'LINE    '+line+'\n'
+        fp.write(line)
+```
+
+```{python}
 
 ```
