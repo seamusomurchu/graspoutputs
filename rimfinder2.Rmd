@@ -44,7 +44,10 @@ def circpoints(r, x, a, b):
 #y = circpoints(297, -38, 259, 0)
 #y = circpoints(297, -37, 259, 0)
 #first circle model
-x1pts = np.linspace(-38, 450, 100)
+#create a few extra x points at beginning
+sxpts = np.linspace(-38, -30, 20)
+x1pts = np.linspace(-30, 450, 75)
+x1pts = np.append(sxpts, x1pts)
 a1 = 259
 b1 = 0
 r1 = 297
@@ -53,7 +56,7 @@ for x in x1pts:
     y1pts = np.append(y1pts, circpoints(r1, x, a1, b1))
 
 #2nd circle model
-x2pts = np.linspace(450, 511.5, 100)
+x2pts = np.linspace(450, 511.5, 120)
 a2 = 159
 b2 = 0
 r2 = 352.5
@@ -87,15 +90,50 @@ plt.plot(98.4, -250, 'g*')
 ```
 
 ```{python}
-y1pts = np.round(y1pts,2)
-y2pts = np.round(y2pts,2)
-
-for i in y1pts:
-    for j in y2pts:
-        if i == j:
-            print "found", i, j
+xpts = np.append(x1pts, x2pts)
+xpts = np.append(xpts, xpts)
+ypts = np.append(y1pts, y2pts)
+ypts = np.append(ypts, ypts*-1.0)
+pts = np.vstack((xpts, ypts)).T
+print pts.shape
+plt.figure()
+plt.plot(pts[:,0], pts[:,1], 'g+')
+plt.axis('equal')
+plt.show()
 #print y1pts
 #print y2pts
+```
+
+```{python}
+# need to translate to M1RF about y axis
+import math
+def transrot(ang, x, y, z):
+    ang = math.radians(ang)
+    zp = z * np.cos(ang) + x * np.sin(ang)
+    xp = -z * np.sin(ang) + x * np.cos(ang)
+    yp = y
+    return xp, yp, zp
+
+#find translated points
+z = np.zeros(len(pts[:,0]))
+xp, yp, zp = transrot(30, pts[:,0], pts[:,1], z)
+print xp.shape
+plt.figure()
+plt.plot(pts[:,0], pts[:,1], 'g+')
+plt.plot(xp, yp, 'm+')
+plt.axis('equal')
+plt.show()
+```
+
+```{python}
+#do 3d plot for comparison
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(pts[:,0], pts[:,1], z, c='g', marker='+')
+ax.scatter(xp, yp, zp, c='m', marker='+')
 ```
 
 ```{python}
