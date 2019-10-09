@@ -121,11 +121,28 @@ print xp.shape
 plt.figure()
 plt.plot(pts[:,0], pts[:,1], 'g+')
 plt.plot(xp, yp, 'm+')
+plt.plot(rm[:,0], rm[:,1], 'b+')
+plt.plot(rmcrfx, rmcrfy, 'b+')
+plt.axis('equal')
+plt.show()
+
+#points drawn from freecad m1rf need 30deg rotation to put them into circles RF
+#circles RF needs -30 deg rotation to go into m1RF
+rmcrfx, rmcrfy, rmcrfz = transrot(30, rm[:,0], rm[:,1], rm[:,2])
+
+plt.figure()
+plt.plot(pts[:,0], z, 'g+')
+
+plt.plot(rmcrfx, rmcrfz, 'b+')
 plt.axis('equal')
 plt.show()
 ```
 
 ```{python}
+#load rim lips in m1rf from file
+# rm = np.loadtxt('realrimlips.txt')
+print rm.shape
+
 #do 3d plot for comparison
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -134,6 +151,33 @@ ax = fig.add_subplot(111, projection='3d')
 
 ax.scatter(pts[:,0], pts[:,1], z, c='g', marker='+')
 ax.scatter(xp, yp, zp, c='m', marker='+')
+ax.scatter(rm[:,0], rm[:,1], rm[:,2], c='b', marker='+')
+```
+
+```{python}
+# #%matplotlib qt
+#plot 3d points from rim surface which is in m1rf
+m1pts = np.loadtxt('2689M1.sfc', skiprows=2)
+print m1pts.shape
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(m1pts[:,0], m1pts[:,1], m1pts[:,2], c='b', marker='+')
+ax.scatter(rm[:,0], rm[:,1], rm[:,2], c='g', marker='+')
+ax.scatter([0,10], [0,10], [0,10], c='r')
+```
+
+```{python}
+plt.close('all')
+```
+
+```{python}
+# %matplotlib inline
+```
+
+```{python}
+
 ```
 
 ```{python}
