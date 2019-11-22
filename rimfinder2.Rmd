@@ -45,8 +45,8 @@ def circpoints(r, x, a, b):
 #y = circpoints(297, -37, 259, 0)
 #first circle model
 #create a few extra x points at beginning
-sxpts = np.linspace(-38, -30, 20)
-x1pts = np.linspace(-30, 450, 75)
+sxpts = np.linspace(-38, -30, 5)
+x1pts = np.linspace(-30, 450, 35)
 x1pts = np.append(sxpts, x1pts)
 a1 = 259
 b1 = 0
@@ -56,7 +56,7 @@ for x in x1pts:
     y1pts = np.append(y1pts, circpoints(r1, x, a1, b1))
 
 #2nd circle model
-x2pts = np.linspace(450, 511.5, 120)
+x2pts = np.linspace(450, 511.5, 20)
 a2 = 159
 b2 = 0
 r2 = 352.5
@@ -116,8 +116,14 @@ def transrot(ang, x, y, z):
 
 #find translated points
 z = np.zeros(len(pts[:,0]))
-xp, yp, zp = transrot(30, pts[:,0], pts[:,1], z)
+z = z-49.2
+xp, yp, zp = transrot(-30, pts[:,0], pts[:,1], z)
 print xp.shape
+
+#points drawn from freecad m1rf need 30deg rotation to put them into circles RF
+#circles RF needs -30 deg rotation to go into m1RF
+rmcrfx, rmcrfy, rmcrfz = transrot(30, rm[:,0], rm[:,1], rm[:,2])
+
 plt.figure()
 plt.plot(pts[:,0], pts[:,1], 'g+')
 plt.plot(xp, yp, 'm+')
@@ -126,14 +132,11 @@ plt.plot(rmcrfx, rmcrfy, 'b+')
 plt.axis('equal')
 plt.show()
 
-#points drawn from freecad m1rf need 30deg rotation to put them into circles RF
-#circles RF needs -30 deg rotation to go into m1RF
-rmcrfx, rmcrfy, rmcrfz = transrot(30, rm[:,0], rm[:,1], rm[:,2])
-
 plt.figure()
 plt.plot(pts[:,0], z, 'g+')
-
 plt.plot(rmcrfx, rmcrfz, 'b+')
+plt.plot(xp, zp, 'm+')
+plt.plot(rm[:,0], rm[:,2], 'b+')
 plt.axis('equal')
 plt.show()
 ```
@@ -155,7 +158,7 @@ ax.scatter(rm[:,0], rm[:,1], rm[:,2], c='b', marker='+')
 ```
 
 ```{python}
-# #%matplotlib qt
+# %matplotlib qt
 #plot 3d points from rim surface which is in m1rf
 m1pts = np.loadtxt('2689M1.sfc', skiprows=2)
 print m1pts.shape
@@ -166,6 +169,7 @@ ax = fig.add_subplot(111, projection='3d')
 ax.scatter(m1pts[:,0], m1pts[:,1], m1pts[:,2], c='b', marker='+')
 ax.scatter(rm[:,0], rm[:,1], rm[:,2], c='g', marker='+')
 ax.scatter([0,10], [0,10], [0,10], c='r')
+ax.scatter(xp, yp, zp, c='m', marker='+')
 ```
 
 ```{python}
@@ -177,7 +181,28 @@ plt.close('all')
 ```
 
 ```{python}
+rimpts = np.vstack((xp,yp,zp)).T
+rimarr = np.append(rimpts, rm, axis=0)
+rimarr = rimarr[:,0:2]
+print rimpts.shape, rm.shape, rimarr.shape
+np.savetxt('m1grfrimpts.txt', rimarr)
+```
 
+```{python}
+from __future__ import division
+f1 = 'm1grfrimpts.txt'
+filepath2 = 'm1grfrimpts.rim'
+with open(f1) as fp:
+    lines = fp.read().splitlines()
+    
+with open(filepath2, "w") as fp:
+    for line in lines:
+        line = 'LINE    '+line+'\n'
+        fp.write(line)
+```
+
+```{python}
+print rm
 ```
 
 ```{python}
