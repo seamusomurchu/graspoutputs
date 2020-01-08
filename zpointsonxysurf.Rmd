@@ -81,11 +81,13 @@ import numpy as np
 
 ```{python}
 zarr = np.array([])
+zarr2 = np.array([])
 for x in xvals:
     for y in yvals:
         #print(x,y)
         z1, z2 = quadratic(x,y, *initial_guess)
         zarr = np.append(zarr, z1)
+        zarr2 = np.append(zarr2, z2)
 ```
 
 ```{python}
@@ -167,6 +169,23 @@ print(z1, z2)
 ```{python}
 z1, z2 = quadraticII(303.35/1000, -0.05/1000, *initialpars)
 print(z1, z2)
+```
+
+```{python}
+#now test z return function with real x y values from the measured data
+xre = m1pts[:,0]
+yre = m1pts[:,1]
+print(xre.shape,yre.shape)
+plt.plot(xre,yre)
+plt.show()
+for x in xre:
+    for y in yre:
+        #print(x,y)
+        z1, z2 = quadraticII(xre, yre, *initialpars)
+        zarr1 = np.append(zarr1, z1)
+        zarr2 = np.append(zarr2, z2)
+
+print(z1.shape,z2.shape)
 ```
 
 ```{python}
