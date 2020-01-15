@@ -125,6 +125,7 @@ for x in xvals:
 
 ```{python}
 # %matplotlib qt
+# %matplotlib inline
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 X, Y = np.meshgrid(xvals, yvals)
@@ -175,17 +176,28 @@ print(z1, z2)
 #now test z return function with real x y values from the measured data
 xre = m1pts[:,0]
 yre = m1pts[:,1]
+xre = xre[1::10]
+yre = yre[1::10]
 print(xre.shape,yre.shape)
-plt.plot(xre,yre)
+plt.plot(xre,yre,'g.')
 plt.show()
 for x in xre:
     for y in yre:
         #print(x,y)
-        z1, z2 = quadraticII(xre, yre, *initialpars)
+        z1, z2 = quadraticII(x, y, *initialpars)
         zarr1 = np.append(zarr1, z1)
         zarr2 = np.append(zarr2, z2)
 
-print(z1.shape,z2.shape)
+print(zarr1.shape,zarr2.shape)
+```
+
+```{python}
+print(zarr1.shape,zarr2.shape)
+print(xre.shape,yre.shape)
+X, Y = np.meshgrid(xre, yre)
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax.scatter(X, Y, zarr2, cmap='viridis', linewidth=None, s=2);
 ```
 
 ```{python}
