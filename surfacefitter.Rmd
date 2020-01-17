@@ -13,6 +13,13 @@ jupyter:
 ---
 
 ```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+import matplotlib.pyplot as plt
 def quadraticII(x, y, a, b, c, d, e, f, g, h, i, j):
      
     if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
@@ -109,6 +116,14 @@ ax.set_zlabel('Z')
 #ax.axis('equal')
 #ax.axis('tight')
 plt.show()
+```
+
+```{python}
+print(X.shape,Y.shape,Z.shape)
+```
+
+```{python}
+print(Z)
 ```
 
 ```{python}
