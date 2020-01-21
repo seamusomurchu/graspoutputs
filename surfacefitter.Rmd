@@ -13,6 +13,8 @@ jupyter:
 ---
 
 ```{python}
+#fit surface using this source as basis
+#https://gist.github.com/amroamroamro/1db8d69b4b65e8bc66a6
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
