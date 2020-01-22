@@ -54,7 +54,7 @@ def ls_ellipsoid(xx,yy,zz):                                  #finds best fit ell
     #  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz + J = 0
     #  where J = -1
     #eansa=np.append(ABC,-1)
-    eansa=np.append(ABC,-1e-6)
+    eansa=np.append(ABC, -1)
 
     return (eansa)
 
@@ -117,15 +117,15 @@ def polyToParams3D(vec,printMe):                             #gets 3D parameters
 #plot 3d points from rim surface which is in m1rf
 m1pts = np.loadtxt('temp.sfc', skiprows=2)
 #now test z return function with real x y values from the measured data
-xre = m1pts[:,0]/1000
-yre = m1pts[:,1]/1000
-zre = m1pts[:,2]/1000
-x = xre[1::10]
-y = yre[1::10]
-z = zre[1::10]
-x = xre[1::2]
-y = yre[1::2]
-z = zre[1::2]
+x = m1pts[:,0]/1000
+y = m1pts[:,1]/1000
+z = m1pts[:,2]/1000
+# x = xre[1::10]
+# y = yre[1::10]
+# z = zre[1::10]
+# x = xre[1::2]
+# y = yre[1::2]
+# z = zre[1::2]
 #get convex hull
 surface  = np.stack((x,y,z), axis=-1)
 hullV    = ConvexHull(surface)
@@ -145,5 +145,6 @@ print("rotationMatrix:", inve)
 ```
 
 ```{python}
+oldparams = #[-2.12946985e+03 -2.14752915e+03 -2.69507279e+01  1.51878244e+00  4.79717339e+01 -2.30043513e+00 -1.12499455e+00 -5.86749641e-01 -1.43627457e+03  1.00000000e-06]
 
 ```

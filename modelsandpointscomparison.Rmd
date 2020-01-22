@@ -1,0 +1,290 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.3.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+import matplotlib.pyplot as plt
+
+#note that x y values must be in 'meters'
+
+def quadraticII(x, y, a, b, c, d, e, f, g, h, i, j):
+     
+    if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
+        delta = 0
+        print("delta < 0!")
+        z1 =  (-(e*x + f*y + i)) / (2*c)
+        z2 =  (-(e*x + f*y + i)) / (2*c)
+                    
+    else:
+        delta = (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j)
+    
+        z1 =  (-(e*x + f*y + i) + np.sqrt(delta)) / (2*c)
+        z2 =  (-(e*x + f*y + i) - np.sqrt(delta)) / (2*c)
+    return z1, z2
+
+def quadraticIII(x, y, a, b, c, d, e, f, g, h, i, j):
+    x = x.all()
+    y = y.all()
+    
+    if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
+        delta = 0
+        print("delta < 0!")
+        z1 =  (-(e*x + f*y + i)) / (2*c)
+        z2 =  (-(e*x + f*y + i)) / (2*c)
+                    
+    else:
+        delta = (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j)
+    
+        z1 =  (-(e*x + f*y + i) + np.sqrt(delta)) / (2*c)
+        z2 =  (-(e*x + f*y + i) - np.sqrt(delta)) / (2*c)
+    return z2
+```
+
+```{python}
+#mirror fitting comparison
+#plot 3d points from rim surface which is in m1rf
+m1pts = np.loadtxt('temp.sfc', skiprows=2)
+#now test z return function with real x y values from the measured data
+xre = m1pts[:,0]/1000
+yre = m1pts[:,1]/1000
+zre = m1pts[:,2]/1000
+# xre = xre[1::10]
+# yre = yre[1::10]
+# zre = zre[1::10]
+
+```
+
+```{python}
+#Use ideal mirror parameters as initial guess for quadratic
+#returns z points for given xy points
+initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
+#initial pars vars = A      B           C       D        E         F      G        H        I            J
+zre1 = np.array([])
+zre2 = np.array([])
+
+for i in range(len(xre)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(xre[i], yre[i], *initialpars)
+    zre1 = np.append(zre1, z1)
+    zre2 = np.append(zre2, z2)
+```
+
+```{python}
+#use juddzone parameters
+#test pars from other program
+opars = [-2.12946985e+03, -2.14752915e+03, -2.69507279e+01,  1.51878244e+00,4.79717339e+01, -2.30043513e+00, -1.12499455e+00, -5.86749641e-01, -1.43627457e+03,  1.00000000e-06]
+#initial pars vars = A      B           C       D        E         F      G        H        I            J
+zre1j = np.array([])
+zre2j = np.array([])
+
+for i in range(len(xre)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(xre[i], yre[i], *opars)
+    zre1j = np.append(zre1j, z1)
+    zre2j = np.append(zre2j, z2)
+```
+
+```{python}
+#plot returned z values on measured zxy points
+#plot real values and model values
+# %matplotlib inline
+fig = plt.figure(figsize=(12,8))
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(m1pts[:,0]/1000, m1pts[:,1]/1000, m1pts[:,2]/1000, c='b', marker='.')
+ax.scatter(xre, yre, zre2, c='r', linewidth=None, s=100, alpha = 0.2)
+ax.scatter(xre, yre, zre2j, c='g', linewidth=None, s=25, alpha = 0.6)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+```
+
+```{python}
+#compare model values to real measured values
+# %matplotlib inline
+fig = plt.figure(figsize=(12,8))
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(xre, yre, zre-zre2, c='r', marker='.', linewidth=None, s=100)
+ax.scatter(xre, yre, zre-zre2j, c='g', marker='.', linewidth=None, s=100)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z difference")
+```
+
+```{python}
+#compare again but along single axis
+plt.figure(figsize=(15,4))
+plt.subplot(1,2,1)
+plt.plot(xre, zre-zre2, 'or')
+plt.plot(xre, np.full(xre.shape, np.mean(zre-zre2)), 'r')
+plt.plot(xre, zre-zre2j, 'og')
+plt.plot(xre, np.full(xre.shape, np.mean(zre-zre2j)), 'g')
+
+plt.subplot(1,2,2)
+plt.plot(yre, zre-zre2, 'or')
+plt.plot(yre, np.full(xre.shape, np.mean(zre-zre2)), 'r')
+plt.plot(yre, zre-zre2j, 'og')
+plt.plot(yre, np.full(xre.shape, np.mean(zre-zre2j)), 'g')
+```
+
+```{python}
+#perhaps better to show ideal mirror difference to measured points
+#and ideal to judd points
+#compare model values to real measured values
+# %matplotlib inline
+fig = plt.figure(figsize=(12,8))
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(xre, yre, zre2-zre, c='b', marker='.', linewidth=None, s=100)
+ax.scatter(xre, yre, zre2-zre2j, c='m', marker='.', linewidth=None, s=100)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z difference")
+```
+
+```{python}
+#compare again but along single axis
+plt.figure(figsize=(15,4))
+plt.subplot(1,2,1)
+plt.plot(xre, zre2-zre, 'ob')
+plt.plot(xre, np.full(xre.shape, np.mean(zre-zre2)), 'b')
+plt.plot(xre, zre2-zre2j, 'om')
+plt.plot(xre, np.full(xre.shape, np.mean(zre-zre2j)), 'm')
+
+plt.subplot(1,2,2)
+plt.plot(yre, zre2-zre, 'ob')
+plt.plot(yre, np.full(xre.shape, np.mean(zre-zre2)), 'b')
+plt.plot(yre, zre2-zre2j, 'om')
+plt.plot(yre, np.full(xre.shape, np.mean(zre-zre2j)), 'm')
+```
+
+```{python}
+"""this way of plotting the differences shows that the two models have uniform z points
+but when the difference between the quadratic and juddzone models has similar behaviour
+so probably the large differences at certain points here are due to surface abnormalities/manfacturing
+defects.
+The ideal equation is closer to the measured points
+"""
+```
+
+```{python}
+print("mean of measured - ideal =", np.mean(zre-zre2), "meters", np.mean(zre-zre2)*1000, "mm")
+print("mean of measured - judd  =", np.mean(zre-zre2j), "meters", np.mean(zre-zre2j)*1000, "mm")
+print("mean % diff measured & ideal {:4f}%".format(np.mean(100*(zre-zre2)/zre)))
+print("max  % diff measured & ideal {:4f}%".format(np.max(100*(zre-zre2)/zre)))
+print("mean % diff measured & judd {:3.2f}%".format(np.mean(100*(zre-zre2j)/zre)))
+print("max  % diff measured & judd {:3.2f}%".format(np.max(100*(zre-zre2j)/zre)))
+```
+
+```{python}
+def surfacewriter(filename, modeltype, x, y, z):
+    #write a file in a GRASP friendly format
+    data = np.array((x,y,z))
+    data = data.T
+    npts = str(len(x))
+    f= open(filename,"w+")
+    f.write("x y z points from {}\n".format(modeltype))
+    f.write(npts+"\n")
+    f.close()
+    np.savetxt(filename, data, fmt='%3.5f', delimiter=', ')
+```
+
+```{python}
+surfacewriter("tesfile", "test", xre*1000, yre*1000, zre*1000)
+```
+
+```{python}
+print(len(xre))
+```
+
+```{python}
+data = np.array((xre,yre,zre))
+print(data.T.shape)
+print(data.T[0])
+```
+
+```{python}
+plt.figure(figsize=(16,5))
+plt.subplot(1,2,1)
+plt.scatter(xre, yre, c=-100*(zre-zre2)/zre, cmap='jet')
+plt.title("Measured surface - ideal surface")
+plt.colorbar()
+plt.subplot(1,2,2)
+plt.scatter(xre, yre, c=100*(zre-zre2j)/zre, cmap='jet')
+plt.title("Measured surface - judd surface")
+plt.colorbar()
+
+plt.show()
+"""similarly, these plots show the error between ideal and measured is less than
+ideal and judd
+But, this is shows there error is greatest where the density of the points is at a minimum
+"""
+```
+
+```{python}
+"""now makes sense to take the ideal equation points as a reference baseline
+assume the ideal surface is perfect with no errors at 0, 0
+although this is unlikely. 
+It's likely both equations fail to some degree in the 0, 0 region"""
+plt.figure(figsize=(16,5))
+plt.subplot(1,2,1)
+plt.scatter(xre, yre, c=100*(zre2-zre)/zre2, cmap='jet')
+plt.title("ideal surface - measured")
+plt.colorbar()
+plt.subplot(1,2,2)
+plt.scatter(xre, yre, c=100*(zre2-zre2j)/zre2, cmap='jet')
+plt.title("ideal surface - judd")
+plt.colorbar()
+
+plt.show()
+"""similarly, these plots show the error between ideal and measured is less than
+ideal and judd
+But, this is shows there error is greatest where the density of the points is at a minimum
+"""
+```
+
+```{python}
+newx = np.linspace(min(xre), 0.02,50)
+newy = np.linspace(-0.1,0.1,50)
+X, Y = np.meshgrid(newx, newy)
+```
+
+```{python}
+plt.figure(figsize=(12,8))
+plt.scatter(xre, yre, c=-100*(zre-zre2)/zre, cmap='jet')
+plt.colorbar()
+plt.scatter(X,Y,c='g', s=2)
+plt.xlim(min(xre)-0.01, 0.05)
+plt.ylim(-0.2, 0.2)
+plt.title("Measured surface - ideal surface")
+"""try to see if increasing the number of sample points can improve the model accuracy"""
+```
+
+```{python}
+print(newx.shape, X.shape)
+```
+
+```{python}
+print(X)
+```
+
+```{python}
+
+```
