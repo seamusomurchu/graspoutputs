@@ -1,0 +1,85 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.3.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+```{python}
+def quadratic(a):
+    dim = a.shape[0]
+    A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
+    return np.sum(np.dot(A, C))
+
+class CathesianMirror:
+    
+    def __init__(self, name, filename):
+        self.name = name
+        self.filename = filename
+        
+    def xyz_meters(self):
+        #plot 3d points from rim surface which is in m1rf
+        mpts = np.loadtxt(self.filename, skiprows=2)
+        return mpts/1000
+    
+    def findparams(self, xyz):
+        xyz = xyz.T
+        G = np.c_[xyz[0], xyz[1], xyz[2]]
+        print("Gshape {}".format(G.shape))
+        
+        A = np.concatenate((G, np.ones((G.shape[0],1))), axis=1)
+        C, _, _, _ = scipy.linalg.lstsq(A, xyz[2])
+        # C will have now the coefficients for:
+        # f(x, y, z) = ax + by + cz + d
+
+        # quadratic eq.
+        dim = G.shape[1]
+        A = np.concatenate((G**2, np.array([np.prod(G[:, k], axis=1) for k in combinations(range(dim), dim-1)]).transpose(), G, np.ones((G.shape[0], 1))), axis=1)
+        C, _, _, _ = scipy.linalg.lstsq(A, xyz[2])
+        # C will have now the coefficients for:
+        print("C proper 3D {}".format(C))
+        # f(x, y, z) = ax**2 + by**2 + cz**2 + dxy+ exz + fyz + gx + hy + iz + j
+        for i in range(G.shape[0]):
+            print(quadratic(G[i,:]), xyz[2])
+        return C
+
+    def quadratic(a):
+        dim = a.shape[0]
+        A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
+        return np.sum(np.dot(A, C))
+
+```
+
+```{python}
+import numpy as np
+import scipy.linalg
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from itertools import combinations 
+
+m = CathesianMirror('300Kmeasured', 'temp.sfc')
+print(m.name,m.filename)
+data = m.xyz_meters()
+print(data.shape)
+print(data[0])
+```
+
+```{python}
+coefs = m.findparams(data)
+print(coefs)
+```
+
+```{python}
+
+```
+
+```{python}
+
+```

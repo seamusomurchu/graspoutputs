@@ -22,6 +22,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.pyplot as plt
+
 def quadraticII(x, y, a, b, c, d, e, f, g, h, i, j):
      
     if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
@@ -36,6 +37,11 @@ def quadraticII(x, y, a, b, c, d, e, f, g, h, i, j):
         z1 =  (-(e*x + f*y + i) + np.sqrt(delta)) / (2*c)
         z2 =  (-(e*x + f*y + i) - np.sqrt(delta)) / (2*c)
     return z1, z2
+
+def quadratic(a):
+    dim = a.shape[0]
+    A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
+    return np.sum(np.dot(A, C))
 ```
 
 ```{python}
@@ -44,8 +50,8 @@ m1pts = np.loadtxt('temp.sfc', skiprows=2)
 #now test z return function with real x y values from the measured data
 xre = m1pts[:,0]/1000
 yre = m1pts[:,1]/1000
-xre = xre[1::10]
-yre = yre[1::10]
+#xre = xre[1::5]
+#yre = yre[1::5]
 print(xre.shape,yre.shape)
 plt.plot(xre,yre,'g.')
 plt.show()
@@ -68,6 +74,7 @@ import numpy as np
 import scipy.linalg
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+from itertools import combinations 
 
 # some 3-dim points
 mean = np.array([0.0,0.0,0.0])
@@ -80,12 +87,14 @@ data = np.vstack((xre,yre,zre2)).T
 print("my data shape", data.shape)
 
 # regular grid covering the domain of the data
-X,Y = np.meshgrid(np.arange(-1.0/10, 5.0/10, 0.5/10), np.arange(-3.0/10, 3.0/10, 0.5/10))
+X,Y = np.meshgrid(np.arange(-1.0/10, 5.0/10, 0.5/10), np.arange(-3.5/10, 3.5/10, 0.5/10))
 XX = X.flatten()
 YY = Y.flatten()
 
+f = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]).transpose()
 
-order = 2    # 1: linear, 2: quadratic
+order = 3    # 1: linear, 2: quadratic, 3: full general 3d coefficients
+
 if order == 1:
     # best-fit linear plane
     A = np.c_[data[:,0], data[:,1], np.ones(data.shape[0])]
@@ -102,16 +111,46 @@ elif order == 2:
     A = np.c_[np.ones(data.shape[0]), data[:,:2], np.prod(data[:,:2], axis=1), data[:,:2]**2]
     C,_,_,_ = scipy.linalg.lstsq(A, data[:,2])
     print(C,_,_,_)
+    print("C shape {}".format(C.shape))
     
     # evaluate it on a grid
     Z = np.dot(np.c_[np.ones(XX.shape), XX, YY, XX*YY, XX**2, YY**2], C).reshape(X.shape)
     print(Z.shape)
+    
+elif order == 3:
+    G = np.c_[xre, yre, zre2]
+    print("Gshape {}".format(G.shape))
+    A = np.concatenate((G, np.ones((G.shape[0],1))), axis=1)
+    C, _, _, _ = scipy.linalg.lstsq(A, zre2)
+    # C will have now the coefficients for:
+    # f(x, y, z) = ax + by + cz + d
+
+    # quadratic eq.
+    dim = G.shape[1]
+    A = np.concatenate((G**2, np.array([np.prod(G[:, k], axis=1) for k in combinations(range(dim), dim-1)]).transpose(), G, np.ones((G.shape[0], 1))), axis=1)
+    C, _, _, _ = scipy.linalg.lstsq(A, zre2)
+    # C will have now the coefficients for:
+    print("C proper 3D {}".format(C))
+    # f(x, y, z) = ax**2 + by**2 + cz**2 + dxy+ exz + fyz + gx + hy + iz + j
+    for i in range(G.shape[0]):
+        print(quadratic(G[i,:]), zre2[i])
+        #z = quadratic(G[i,:])
+# This can be used then:
+# def quadratic(a):
+#     dim = a.shape[0]
+#     A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
+#     return np.sum(np.dot(A, C))
+
+
+    
+#reformXYZ for scatter plot    
 # plot points and fitted surface
 # %matplotlib qt
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 ax.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.2)
-ax.scatter(data[:,0], data[:,1], data[:,2], c='r', s=50)
+ax.scatter3D(X,Y,Z)
+ax.scatter(data[:,0], data[:,1], data[:,2], c='r', s=50, alpha=0.7)
 plt.xlabel('X')
 plt.ylabel('Y')
 ax.set_zlabel('Z')
@@ -125,7 +164,7 @@ print(X.shape,Y.shape,Z.shape)
 ```
 
 ```{python}
-print(Z)
+zr = np.reshape(Z,len(Z[0]**2))
 ```
 
 ```{python}
