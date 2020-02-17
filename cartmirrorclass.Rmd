@@ -13,11 +13,11 @@ jupyter:
 ---
 
 ```{python}
-def quadratic(a):
+def quadratic(a, C):
     dim = a.shape[0]
     A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
     return np.sum(np.dot(A, C))
-
+    
 class CathesianMirror:
     
     def __init__(self, name, filename):
@@ -46,14 +46,11 @@ class CathesianMirror:
         # C will have now the coefficients for:
         print("C proper 3D {}".format(C))
         # f(x, y, z) = ax**2 + by**2 + cz**2 + dxy+ exz + fyz + gx + hy + iz + j
+        Zarr = np.array([])
         for i in range(G.shape[0]):
-            print(quadratic(G[i,:]), xyz[2])
-        return C
-
-    def quadratic(a):
-        dim = a.shape[0]
-        A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
-        return np.sum(np.dot(A, C))
+            Zarr = np.append(Zarr, quadratic(G[i,:], C))
+            print(quadratic(G[i,:], C), xyz[2][i])
+        return C, Zarr
 
 ```
 
@@ -72,12 +69,24 @@ print(data[0])
 ```
 
 ```{python}
-coefs = m.findparams(data)
+coefs, Zarr = m.findparams(data)
 print(coefs)
 ```
 
 ```{python}
+X,Y = np.meshgrid(np.arange(-1.0/10, 5.0/10, 0.5/10), np.arange(-3.5/10, 3.5/10, 0.5/10))
 
+fig = plt.figure()
+ax = fig.gca(projection='3d')
+ax.plot_surface(X, Y, Zarr, rstride=1, cstride=1, alpha=0.2)
+#ax.scatter3D(X,Y,Z)
+ax.scatter(data[:,0], data[:,1], data[:,2], c='r', s=50, alpha=0.7)
+plt.xlabel('X')
+plt.ylabel('Y')
+ax.set_zlabel('Z')
+#ax.axis('equal')
+#ax.axis('tight')
+plt.show()
 ```
 
 ```{python}

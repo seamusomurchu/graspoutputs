@@ -1,0 +1,271 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.3.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+```{python}
+#fit surface using this source as basis
+#https://gist.github.com/amroamroamro/1db8d69b4b65e8bc66a6
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+import matplotlib.pyplot as plt
+
+def quadraticII(x, y, a, b, c, d, e, f, g, h, i, j):
+     
+    if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
+        delta = 0
+        print("delta < 0!")
+        z1 =  (-(e*x + f*y + i)) / (2*c)
+        z2 =  (-(e*x + f*y + i)) / (2*c)
+                    
+    else:
+        delta = (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j)
+    
+        z1 =  (-(e*x + f*y + i) + np.sqrt(delta)) / (2*c)
+        z2 =  (-(e*x + f*y + i) - np.sqrt(delta)) / (2*c)
+    return z1, z2
+
+def quadratic(a):
+    dim = a.shape[0]
+    A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
+    return np.sum(np.dot(A, C))
+
+def surfacewriter(filename, modeltype, x, y, z):
+    #write a file in a GRASP friendly format
+
+    data = np.array((x,y,z))
+    data = data.T
+    npts = str(len(x))
+    head = "x y z points from {}\n {}".format(modeltype, npts)
+    fname = filename+modeltype+".sfc"
+#     f= open(filename+modeltype+".sfc","w+")
+#     f.write("x y z points from {}\n".format(modeltype))
+#     f.write(npts+"\n")
+#     f.close()
+    np.savetxt(fname, data, fmt='%3.5f', delimiter=', ', header=head)
+    
+def createpoints(sampling):
+    sr = np.sqrt(sampling)
+    xrange = np.linspace(min(xre), max(xre), sr, dtype=float)
+    yrange = np.linspace(min(yre), max(yre), sr, dtype=float)
+    X, Y = np.meshgrid(xrange, yrange)
+    xpts = np.reshape(X, (-1,1))
+    ypts = np.reshape(Y, (-1,1))
+    
+    return xpts.flatten(), ypts.flatten()
+
+def returnz(xpts, ypts, pars):
+    zpts1 = np.array([])
+    zpts2 = np.array([])
+    
+    for i in range(len(xpts)):
+ 
+        z1, z2 = quadraticII(xpts[i], ypts[i], *initialpars)
+        zpts1 = np.append(zpts1, z1)
+        zpts2 = np.append(zpts2, z2)
+        
+    return zpts1, zpts2
+```
+
+```{python}
+#generate mirror files at different sampling rates
+#use ideal equation as baseline
+#test the measured points sampling rate = 3416 points per mirror, NB not equidistant
+#test low sampling and high sampling, to start, 1700, 6000
+#refine these intervals after if need be
+#can use large square to simplify since GRASP will sort the rim geometry
+#what would be the equivalent ssquare xy data for 34
+```
+
+```{python}
+#plot 3d points from rim surface which is in m1rf
+m1pts = np.loadtxt('temp.sfc', skiprows=2)
+#now test z return function with real x y values from the measured data
+xre = m1pts[:,0]/1000
+yre = m1pts[:,1]/1000
+
+print(min(xre), max(xre), min(yre), max(yre))
+```
+
+```{python}
+ovalarea = np.pi * ((max(xre) - min(xre))/2) * (( max(yre) - min(yre))/2)
+print("mirror area = {} m^2".format(ovalarea))
+sqarea = (max(xre) - min(xre)) * ( max(yre) - min(yre))
+print("equivalent square = {} m^2".format(sqarea))
+
+arearatio = sqarea / ovalarea
+print("area ratio = {}".format(arearatio))
+
+ptspermir = 3416 / ovalarea
+print("measured mirror points per area = {} pts/mm^2".format(ptspermir/(1000*2)))
+print("measured mirror points per area = {} pts/m^2".format(ptspermir))
+
+print("points per meter X measured mirror = {} pts/m".format(58/(max(xre) - min(xre))))
+print("points per meter Y measured mirror = {} pts/m".format(58/( max(yre) - min(yre))))
+print((58/(max(xre) - min(xre)) + 58/( max(yre) - min(yre)))/2 )
+```
+
+```{python}
+#for sampling to match measured mirrors
+#nb there will be higher sampling in y like this
+
+print(3416/(max(xre) - min(xre)))
+
+xsamp = 58/(max(xre) - min(xre))
+ysamp = 58/( max(yre) - min(yre))
+#sqrt 3416 = 58.45
+xsamp = 58
+ysamp = 58
+
+xrange = np.linspace(min(xre), max(xre), xsamp, dtype=float)
+yrange = np.linspace(min(yre), max(yre), ysamp, dtype=float)
+
+X, Y = np.meshgrid(xrange, yrange)
+xpts = np.reshape(X, (-1,1))
+ypts = np.reshape(Y, (-1,1))
+
+plt.scatter(xpts,ypts, marker = '.', s = 1)
+```
+
+```{python}
+#get z points for xy points
+initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
+#initial pars vars = A      B           C       D        E         F      G        H        I            J
+zpts1 = np.array([])
+zpts2 = np.array([])
+for i in range(len(xpts)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(xpts[i], ypts[i], *initialpars)
+    zpts1 = np.append(zpts1, z1)
+    zpts2 = np.append(zpts2, z2)
+```
+
+```{python}
+#check against measured file
+m1pts = np.loadtxt('temp.sfc', skiprows=2)
+#now test z return function with real x y values from the measured data
+xre = m1pts[:,0]/1000
+yre = m1pts[:,1]/1000
+zre = m1pts[:,2]/1000
+
+# %matplotlib inline
+
+fig = plt.figure(figsize=(12,8))
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(m1pts[:,0]/1000, m1pts[:,1]/1000, m1pts[:,2]/1000, c='b', marker='.')
+ax.scatter(xpts, ypts, zpts2, c='r', linewidth=None, s=1)
+# ax.scatter(xre, yre, zre2j, c='g', linewidth=None, s=25, alpha = 0.6)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+```
+
+```{python}
+surfarea = (max(xpts) - min(xpts)) * (max(ypts) - min(ypts))
+samprate = float(len(xpts)/surfarea)
+print("Sampling rate = {0:.2f} pts/m^2".format(round(samprate,2)))
+print(type(str(samprate)))
+```
+
+```{python}
+###try run for diff sampling rates
+sampling = 1700
+#get min and max values from measured file
+m1pts = np.loadtxt('temp.sfc', skiprows=2)
+xre = m1pts[:,0]/1000
+yre = m1pts[:,1]/1000
+
+#get z points for xy points
+initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
+
+def createpoints(sampling):
+    sr = np.sqrt(sampling)
+    xrange = np.linspace(min(xre), max(xre), sr, dtype=float)
+    yrange = np.linspace(min(yre), max(yre), sr, dtype=float)
+    X, Y = np.meshgrid(xrange, yrange)
+    xpts = np.reshape(X, (-1,1))
+    ypts = np.reshape(Y, (-1,1))
+    
+    return xpts.flatten(), ypts.flatten()
+
+def returnz(xpts, ypts, pars):
+    zpts1 = np.array([])
+    zpts2 = np.array([])
+    
+    for i in range(len(xpts)):
+ 
+        z1, z2 = quadraticII(xpts[i], ypts[i], *initialpars)
+        zpts1 = np.append(zpts1, z1)
+        zpts2 = np.append(zpts2, z2)
+        
+    return zpts1, zpts2.flatten()
+```
+
+```{python}
+x, y = createpoints(1700)
+z1, z2 = returnz(x,y, initialpars)
+
+# %matplotlib inline
+fig = plt.figure(figsize=(12,8))
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(m1pts[:,0]/1000, m1pts[:,1]/1000, m1pts[:,2]/1000, c='b', marker='.')
+ax.scatter(x, y, z2, c='r', linewidth=None, s=1)
+# ax.scatter(xre, yre, zre2j, c='g', linewidth=None, s=25, alpha = 0.6)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+```
+
+```{python}
+###try run for diff sampling rates
+sampling = 1700.0
+#get min and max values from measured file
+m1pts = np.loadtxt('temp.sfc', skiprows=2)
+xre = m1pts[:,0]/1000
+yre = m1pts[:,1]/1000
+
+#square area
+sqarea = (max(xre) - min(xre)) * ( max(yre) - min(yre))
+
+#sampling rate
+srate = sampling / sqarea
+str(round(srate,2))
+#print(srate)
+
+#get z points for xy points
+initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
+
+```
+
+```{python}
+sampling = 3450
+x, y = createpoints(sampling)
+z1, z2 = returnz(x, y, initialpars)
+print(x.shape, z2.shape)
+fname = str(sampling)
+modeltype = "ideal"
+surfacewriter(fname, modeltype, x, y, z2)
+```
+
+```{python}
+np.savetxt("testfile.sfc", (x,y,z2))
+```
+
+```{python}
+
+```

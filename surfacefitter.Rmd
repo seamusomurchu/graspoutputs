@@ -50,8 +50,8 @@ m1pts = np.loadtxt('temp.sfc', skiprows=2)
 #now test z return function with real x y values from the measured data
 xre = m1pts[:,0]/1000
 yre = m1pts[:,1]/1000
-#xre = xre[1::5]
-#yre = yre[1::5]
+# xre = xre[1::5]
+# yre = yre[1::5]
 print(xre.shape,yre.shape)
 plt.plot(xre,yre,'g.')
 plt.show()
@@ -133,7 +133,7 @@ elif order == 3:
     print("C proper 3D {}".format(C))
     # f(x, y, z) = ax**2 + by**2 + cz**2 + dxy+ exz + fyz + gx + hy + iz + j
     for i in range(G.shape[0]):
-        print(quadratic(G[i,:]), zre2[i])
+        print(quadratic(G[i,:]), zre2)
         #z = quadratic(G[i,:])
 # This can be used then:
 # def quadratic(a):
