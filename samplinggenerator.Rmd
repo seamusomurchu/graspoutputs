@@ -253,7 +253,7 @@ initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19
 ```
 
 ```{python}
-sampling = 3450
+sampling = 1700
 x, y = createpoints(sampling)
 z1, z2 = returnz(x, y, initialpars)
 print(x.shape, z2.shape)
@@ -267,5 +267,119 @@ np.savetxt("testfile.sfc", (x,y,z2))
 ```
 
 ```{python}
+"""Sampling tests on ideal equation mirror proved 1700 pts suffiecient.
+Now testing if sampling can effect the measured mirror,
+find an equation for the measured mirror from previous experiments,
+test the same 3 sampling rates 1700, 3450, 5000"""
+
+import numpy as np
+import scipy.linalg
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from itertools import combinations 
+
+m1pts = np.loadtxt('temp.sfc', skiprows=2)
+xre = m1pts[:,0]/1000
+yre = m1pts[:,1]/1000
+zre = m1pts[:,2]/1000
+
+#CHANGE TO MY DATA
+data = np.vstack((xre,yre,zre)).T
+print("my data shape", data.shape)
+
+# regular grid covering the domain of the data
+X,Y = np.meshgrid(np.arange(-1.0/10, 5.0/10, 0.5/10), np.arange(-3.5/10, 3.5/10, 0.5/10))
+XX = X.flatten()
+YY = Y.flatten()
+
+f = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]).transpose()
+
+order = 3    # 1: linear, 2: quadratic, 3: full general 3d coefficients
+
+if order == 1:
+    # best-fit linear plane
+    A = np.c_[data[:,0], data[:,1], np.ones(data.shape[0])]
+    C,_,_,_ = scipy.linalg.lstsq(A, data[:,2])    # coefficients
+    
+    # evaluate it on grid
+    Z = C[0]*X + C[1]*Y + C[2]
+    
+    # or expressed using matrix/vector product
+    #Z = np.dot(np.c_[XX, YY, np.ones(XX.shape)], C).reshape(X.shape)
+
+elif order == 2:
+    # best-fit quadratic curve
+    A = np.c_[np.ones(data.shape[0]), data[:,:2], np.prod(data[:,:2], axis=1), data[:,:2]**2]
+    C,_,_,_ = scipy.linalg.lstsq(A, data[:,2])
+    print(C,_,_,_)
+    print("C shape {}".format(C.shape))
+    
+    # evaluate it on a grid
+    Z = np.dot(np.c_[np.ones(XX.shape), XX, YY, XX*YY, XX**2, YY**2], C).reshape(X.shape)
+    print(Z.shape)
+    
+elif order == 3:
+    G = np.c_[xre, yre, zre]
+    print("Gshape {}".format(G.shape))
+    A = np.concatenate((G, np.ones((G.shape[0],1))), axis=1)
+    C, _, _, _ = scipy.linalg.lstsq(A, zre)
+    # C will have now the coefficients for:
+    # f(x, y, z) = ax + by + cz + d
+
+    # quadratic eq.
+    dim = G.shape[1]
+    A = np.concatenate((G**2, np.array([np.prod(G[:, k], axis=1) for k in combinations(range(dim), dim-1)]).transpose(), G, np.ones((G.shape[0], 1))), axis=1)
+    C, _, _, _ = scipy.linalg.lstsq(A, zre)
+    # C will have now the coefficients for:
+    print("C proper 3D {}".format(C))
+    # f(x, y, z) = ax**2 + by**2 + cz**2 + dxy+ exz + fyz + gx + hy + iz + j
+    #for i in range(G.shape[0]):
+        #print(quadratic(G[i,:]), zre)
+        #z = quadratic(G[i,:])
+# This can be used then:
+# def quadratic(a):
+#     dim = a.shape[0]
+#     A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
+#     return np.sum(np.dot(A, C))
+
+
+    
+#reformXYZ for scatter plot    
+# plot points and fitted surface
+# %matplotlib inline
+fig = plt.figure(figsize=(10,8))
+ax = fig.gca(projection='3d')
+ax.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.2)
+ax.scatter3D(X,Y,Z)
+ax.scatter(data[:,0], data[:,1], data[:,2], c='r', s=50, alpha=0.7)
+plt.xlabel('X')
+plt.ylabel('Y')
+ax.set_zlabel('Z')
+#ax.axis('equal')
+#ax.axis('tight')
+plt.show()
+```
+
+```{python}
+"""#=> new params = [-6.66150429e-13 -6.71783420e-13 -1.33538869e-14  3.99436006e-16
+  9.33367274e-15 -9.77366849e-16 -1.20429310e-15 -9.34606790e-17
+  1.00000000e+00  4.62903559e-16]"""
+
+ftdpars = (-6.66150429e-13, -6.71783420e-13, -1.33538869e-14,  3.99436006e-16,
+  9.33367274e-15, -9.77366849e-16, -1.20429310e-15, -9.34606790e-17,
+  1.00000000e+00,  4.62903559e-16)
+
+sampling = 5000
+x, y = createpoints(sampling)
+z1, z2 = returnz(x, y, ftdpars)
+print(x.shape, z2.shape)
+fname = str(sampling)
+modeltype = "measured"
+surfacewriter(fname, modeltype, x, y, z2)
+```
+
+```{python}
+
+
 
 ```

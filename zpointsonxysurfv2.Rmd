@@ -1,0 +1,354 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.3.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+import matplotlib.pyplot as plt
+
+#note that x y values must be in 'meters'
+
+def quadraticII(x, y, a, b, c, d, e, f, g, h, i, j):
+     
+    if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
+        delta = 0
+        print("delta < 0!")
+        z1 =  (-(e*x + f*y + i)) / (2*c)
+        z2 =  (-(e*x + f*y + i)) / (2*c)
+                    
+    else:
+        delta = (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j)
+    
+        z1 =  (-(e*x + f*y + i) + np.sqrt(delta)) / (2*c)
+        z2 =  (-(e*x + f*y + i) - np.sqrt(delta)) / (2*c)
+    return z1, z2
+
+def quadraticIII(x, y, a, b, c, d, e, f, g, h, i, j):
+    x = x.all()
+    y = y.all()
+    
+    if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
+        delta = 0
+        print("delta < 0!")
+        z1 =  (-(e*x + f*y + i)) / (2*c)
+        z2 =  (-(e*x + f*y + i)) / (2*c)
+                    
+    else:
+        delta = (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j)
+    
+        z1 =  (-(e*x + f*y + i) + np.sqrt(delta)) / (2*c)
+        z2 =  (-(e*x + f*y + i) - np.sqrt(delta)) / (2*c)
+    return z2
+```
+
+```{python}
+#plot 3d points from rim surface which is in m1rf
+m1pts = np.loadtxt('temp.sfc', skiprows=2)
+#now test z return function with real x y values from the measured data
+xre = m1pts[:,0]/1000
+yre = m1pts[:,1]/1000
+xre = xre[1::10]
+yre = yre[1::10]
+#take only every 10th value from real rim points in xy
+
+# X, Y = np.meshgrid(xre, yre)
+# print(X.shape)
+
+fig = plt.figure(2)
+plt.plot(xre,yre,'g.')
+plt.show()
+
+
+```
+
+```{python}
+
+```
+
+```{python}
+print(len(xre))
+```
+
+```{python}
+#Use ideal mirror parameters as initial guess for quadratic
+#returns z points for given xy points
+initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
+#initial pars vars = A      B           C       D        E         F      G        H        I            J
+zre1 = np.array([])
+zre2 = np.array([])
+
+for i in range(len(xre)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(xre[i], yre[i], *initialpars)
+    zre1 = np.append(zre1, z1)
+    zre2 = np.append(zre2, z2)
+```
+
+```{python}
+#plot returned z values on measured zxy points
+# %matplotlib inline
+fig = plt.figure(2)
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(m1pts[:,0]/1000, m1pts[:,1]/1000, m1pts[:,2]/1000, c='b', marker='+')
+ax.scatter(xre, yre, zre2, c='r', linewidth=None, s=2)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+```
+
+```{python}
+#test pars from other program
+opars = [-2.12946985e+03, -2.14752915e+03, -2.69507279e+01,  1.51878244e+00,4.79717339e+01, -2.30043513e+00, -1.12499455e+00, -5.86749641e-01, -1.43627457e+03,  1.00000000e-06]
+#initial pars vars = A      B           C       D        E         F      G        H        I            J
+zre1 = np.array([])
+zre2 = np.array([])
+
+for i in range(len(xre)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(xre[i], yre[i], *opars)
+    zre1 = np.append(zre1, z1)
+    zre2 = np.append(zre2, z2)
+```
+
+```{python}
+#plot returned z values on measured zxy points
+# %matplotlib inline
+fig = plt.figure(2)
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(m1pts[:,0]/1000, m1pts[:,1]/1000, m1pts[:,2]/1000, c='b', marker='+')
+ax.scatter(xre, yre, zre2, c='r', linewidth=None, s=2)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+```
+
+```{python}
+#compare z vals based on different parameters
+zre1 = np.array([])
+zre2 = np.array([])
+zre1t = np.array([])
+zre2t = np.array([])
+for i in range(len(xre)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(xre[i], yre[i], *initialpars)
+    zre1 = np.append(zre1, z1)
+    zre2 = np.append(zre2, z2)
+    z1, z2 = quadraticII(xre[i], yre[i], *opars)
+    zre1t = np.append(zre1t, z1)
+    zre2t = np.append(zre2t, z2)
+```
+
+```{python}
+#print(zre2t-zre2)
+print(zre2t,zre2)
+```
+
+```{python}
+#test pars from other program
+opars = [-2.12946985e+03, -2.14752915e+03, -2.69507279e+01,  1.51878244e+00,4.79717339e+01, -2.30043513e+00, -1.12499455e+00, -5.86749641e-01, -1.43627457e+03,  1.00000000e-06]
+initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
+#initial pars vars = A      B           C       D        E         F      G        H        I            J
+
+#create another circle of points
+xre = m1pts[:,0]/1000
+yre = m1pts[:,1]/1000
+xre1 = xre[1::10]
+yre1 = yre[1::10]
+xret = xre[4::10]
+yret = yre[4::10]
+print(xre1.shape,xret.shape)
+
+fig = plt.figure(2)
+plt.plot(xre1,yre1,'g.')
+plt.plot(xret,yret,'m.')
+plt.show()
+
+zre1t = np.array([])
+zre2t = np.array([])
+for i in range(len(xret)):
+
+    z1, z2 = quadraticII(xret[i], yret[i], *opars)
+    zre1t = np.append(zre1t, z1)
+    zre2t = np.append(zre2t, z2)
+```
+
+```{python}
+# %matplotlib inline
+fig = plt.figure(figsize=(12,8))
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(m1pts[:,0]/1000, m1pts[:,1]/1000, m1pts[:,2]/1000, c='b', marker='.')
+ax.scatter(xre1, yre1, zre2, c='g', marker='.', linewidth=None, s=200, alpha=0.6)
+ax.scatter(xret, yret, zre2t, c='r', marker='.', linewidth=None, s=200, alpha=0.6)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+```
+
+```{python}
+print(xret.shape, yret.shape, zre2t.shape)
+```
+
+```{python}
+#analyse two parameter sets on same set of x y points
+modpars = [-2.12946985e+03, -2.14752915e+03, -2.69507279e+01,  1.51878244e+00,4.79717339e+01, -2.30043513e+00, -1.12499455e+00, -5.86749641e-01, -1.43627457e+03,  1.00000000e-06]
+initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
+#initial pars vars = A      B           C       D        E         F      G        H        I            J
+
+#create another circle of points
+xre = m1pts[:,0]/1000
+yre = m1pts[:,1]/1000
+xre = xre[1::10]
+yre = yre[1::10]
+
+zre1 = np.array([])
+zre2 = np.array([])
+zre1mod = np.array([])
+zre2mod = np.array([])
+for i in range(len(xre)):
+
+    z1, z2 = quadraticII(xre[i], yre[i], *initialpars)
+    zre1 = np.append(zre1, z1)
+    zre2 = np.append(zre2, z2)
+    
+    z1, z2 = quadraticII(xre[i], yre[i], *modpars)
+    zre1mod = np.append(zre1mod, z1)
+    zre2mod = np.append(zre2mod, z2)
+```
+
+```{python}
+# %matplotlib inline
+fig = plt.figure(figsize=(12,8))
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(xre1, yre1, zre2-zre2mod, c='m', marker='.', linewidth=None, s=100)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z difference")
+```
+
+```{python}
+#simple % diff analysis
+# %matplotlib inline
+pdiff = zre2-zre2mod
+print(pdiff.shape, zre2.shape)
+pdiff = ((pdiff) / zre2 ) * 100
+print(pdiff.shape)
+print("max % difference between models", max(pdiff))
+plt.plot(np.linspace(1,len(pdiff), len(pdiff)), pdiff, 'b.', linewidth=None)
+```
+
+```{python}
+#simple % diff analysis
+# %matplotlib inline
+pdiff = zre2-zre2mod
+print(pdiff.shape, zre2.shape)
+pdiff = ((pdiff) / zre2 ) * 100
+print(pdiff.shape)
+print("max % difference between models", max(pdiff))
+plt.figure(figsize=(15,5))
+plt.subplot(1,2,1)
+plt.plot(xre, pdiff, 'b.', linewidth=None)
+plt.subplot(1,2,2)
+plt.plot(yre, pdiff, 'b.', linewidth=None)
+plt.show()
+```
+
+```{python}
+#plot error as z value for a xy plot
+# %matplotlib inline
+pdiff = zre2-zre2mod
+#pdiff = (abs(pdiff) / abs(zre2)) * 100.0
+pdiff = (pdiff / zre2) * 100.0
+
+plt.figure(figsize=(10,7))
+plt.scatter(xret, yret, c=pdiff, cmap='jet')
+plt.colorbar()
+plt.show()
+#must test more xy points near 0,0
+```
+
+```{python}
+pdiff = zre2-zre2mod
+print(pdiff.shape, max(abs(pdiff)), max(abs(zre2)))
+```
+
+```{python}
+print(max(abs(pdiff)) / max(abs(zre2))*100.0) 
+print(np.mean(pdiff))
+```
+
+```{python}
+#use this code to find what range of accuracies are represented
+
+pdiff = zre2-zre2mod
+#pdiff = (abs(pdiff) / abs(zre2)) * 100.0
+pdiff = (pdiff / zre2) * 100.0
+
+accuracy = 6e-4 #meters... 0.5 mm = 0.5e-3 m
+accuracy = 0.75e-3 # 0.75e-6 mm
+accuracy = 10 #in percentage terms
+
+errar = np.array([])
+for i in pdiff:
+
+    if abs(i) > accuracy:
+        errar = np.append(errar, i)
+        
+print(len(errar)/len(zre2) * 100, "% of fitting points in error > {} %".format(accuracy))
+print(max(errar))
+
+```
+
+```{python}
+#use this code with the max % difference and find associated error
+#it shows with the highest error values of 47%, the difference is 5.7e-4  m = 5.7e-1 mm = 0.57 mm
+pdiff = (zre2-zre2mod) 
+pdiffer = (pdiff / zre2) *100
+accuracy = 47
+errorarr = np.array([])
+for i in range(pdiff.shape[0]):
+
+    if abs(pdiff[i] / zre2[i] *100) > accuracy:
+        print("max difference  = ", pdiff[i], "m @ {} %".format(accuracy))
+```
+
+```{python}
+plt.figure(figsize=(15,5))
+plt.subplot(1,2,1)
+hist, bin_edges = np.histogram(pdiff, density=True)
+plt.hist(pdiff, bins='auto', histtype='bar', color='m')
+plt.xlabel('error between models (meters)')
+plt.title('Ideal mirror equation vs Juddzone equation paramters')
+
+plt.subplot(1,2,2)
+bins = np.linspace(0,50,51)
+print(bins)
+hist, bin_edges = np.histogram(((pdiff / zre2) * 100.0), density=True)
+plt.hist(((pdiff / zre2) * 100.0), bins=bins, histtype='bar')
+plt.yscale('log')
+#plt.xscale('log')
+plt.xlabel('% Difference between models')
+plt.title('Ideal mirror equation vs Juddzone equation paramters')
+```
+
+```{python}
+#show also consider z difference between measured data to 2 models
+```
