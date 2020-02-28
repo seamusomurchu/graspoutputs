@@ -135,6 +135,8 @@ for i in range(len(hullV.vertices)):
     hull[i] = surface[hullV.vertices[i]]
 hull     = np.transpose(hull)         
 
+print(hull.shape)
+
 #fit ellipsoid on convex hull
 eansa            = ls_ellipsoid(hull[0],hull[1],hull[2]) #get ellipsoid polynomial coefficients
 print("coefficients:"  , eansa)
