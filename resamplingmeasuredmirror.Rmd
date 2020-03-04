@@ -1,0 +1,427 @@
+---
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.3.0
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+```{python}
+def quadratic(a):
+    dim = a.shape[0]
+    A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
+    return np.sum(np.dot(A, C))
+
+class CathesianMirror:
+    
+    def __init__(self, name, filename):
+        self.name = name
+        self.filename = filename
+        
+    def xyz_meters(self):
+
+        mpts = np.loadtxt(self.filename, skiprows=2)
+        return mpts/1000
+    
+    def findparams(self, xyz):
+        xyz = xyz.T
+        G = np.c_[xyz[0], xyz[1], xyz[2]]
+        print("Gshape {}".format(G.shape))
+        
+        A = np.concatenate((G, np.ones((G.shape[0],1))), axis=1)
+        C, _, _, _ = scipy.linalg.lstsq(A, xyz[2])
+        # C will have now the coefficients for:
+        # f(x, y, z) = ax + by + cz + d
+
+        # quadratic eq.
+        dim = G.shape[1]
+        A = np.concatenate((G**2, np.array([np.prod(G[:, k], axis=1) for k in combinations(range(dim), dim-1)]).transpose(), G, np.ones((G.shape[0], 1))), axis=1)
+        C, _, _, _ = scipy.linalg.lstsq(A, xyz[2])
+        # C will have now the coefficients for:
+        print("C proper 3D {}".format(C))
+        # f(x, y, z) = ax**2 + by**2 + cz**2 + dxy+ exz + fyz + gx + hy + iz + j
+#         for i in range(G.shape[0]):
+#             print(quadratic(G[i,:]), xyz[2])
+        return C
+
+    def quadratic(self, a):
+        dim = a.shape[0]
+        A = np.concatenate((a**2, np.array([np.prod(a[k,]) for k in combinations(range(dim), dim-1)]), a, [1]))
+        return np.sum(np.dot(A, C))
+    
+    
+    def quadraticII(self, x, y, a, b, c, d, e, f, g, h, i, j):
+     
+        if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
+            delta = 0
+            print("delta < 0!")
+            z1 =  (-(e*x + f*y + i)) / (2*c)
+            z2 =  (-(e*x + f*y + i)) / (2*c)
+
+        else:
+            delta = (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j)
+
+            z1 =  (-(e*x + f*y + i) + np.sqrt(delta)) / (2*c)
+            z2 =  (-(e*x + f*y + i) - np.sqrt(delta)) / (2*c)
+        return z1, z2
+
+    def createpoints(self, sampling):
+        sr = np.sqrt(sampling)
+        xrange = np.linspace(min(xre), max(xre), sr, dtype=float)
+        yrange = np.linspace(min(yre), max(yre), sr, dtype=float)
+        X, Y = np.meshgrid(xrange, yrange)
+        xpts = np.reshape(X, (-1,1))
+        ypts = np.reshape(Y, (-1,1))
+
+        return xpts.flatten(), ypts.flatten()
+
+    def returnz(self, xpts, ypts, pars):
+        zpts1 = np.array([])
+        zpts2 = np.array([])
+
+        for i in range(len(xpts)):
+
+            z1, z2 = m.quadraticII(xpts[i], ypts[i], *initialpars)
+            zpts1 = np.append(zpts1, z1)
+            zpts2 = np.append(zpts2, z2)
+
+        return zpts1, zpts2
+    
+    def surfacewriter(self, filename, modeltype, x, y, z):
+        #write a file in a GRASP friendly format
+
+        data = np.array((x,y,z))
+        data = data.T
+        npts = str(len(x))
+        head = "x y z points from {}\n {}".format(modeltype, npts)
+        fname = filename+modeltype+".sfc"
+
+        np.savetxt(fname, data, fmt='%3.5f', delimiter=', ', header=head)
+    
+    def ls_ellipsoid(self, xx,yy,zz):                                  
+        #finds best fit ellipsoid. Found at http://www.juddzone.com/ALGORITHMS/least_squares_3D_ellipsoid.html
+        #least squares fit to a 3D-ellipsoid
+        #  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz  = 1
+        #
+        # Note that sometimes it is expressed as a solution to
+        #  Ax^2 + By^2 + Cz^2 + 2Dxy + 2Exz + 2Fyz + 2Gx + 2Hy + 2Iz  = 1
+        # where the last six terms have a factor of 2 in them
+        # This is in anticipation of forming a matrix with the polynomial coefficients.
+        # Those terms with factors of 2 are all off diagonal elements.  These contribute
+        # two terms when multiplied out (symmetric) so would need to be divided by two
+
+        # change xx from vector of length N to Nx1 matrix so we can use hstack
+        x = xx[:,np.newaxis]
+        y = yy[:,np.newaxis]
+        z = zz[:,np.newaxis]
+
+        #  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz = 1
+        J = np.hstack((x*x,y*y,z*z,x*y,x*z,y*z, x, y, z))
+        K = np.ones_like(x) #column of ones
+
+        #np.hstack performs a loop over all samples and creates
+        #a row in J for each x,y,z sample:
+        # J[ix,0] = x[ix]*x[ix]
+        # J[ix,1] = y[ix]*y[ix]
+        # etc.
+
+        JT=J.transpose()
+        JTJ = np.dot(JT,J)
+        InvJTJ=np.linalg.inv(JTJ);
+        ABC= np.dot(InvJTJ, np.dot(JT,K))
+
+        # Rearrange, move the 1 to the other side
+        #  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz - 1 = 0
+        #    or
+        #  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz + J = 0
+        #  where J = -1
+        #eansa=np.append(ABC,-1)
+        eansa=np.append(ABC, -1)
+
+        return (eansa)
+
+    def polyToParams3D(self, vec,printMe):                             #gets 3D parameters of an ellipsoid. Found at http://www.juddzone.com/ALGORITHMS/least_squares_3D_ellipsoid.html
+        # convert the polynomial form of the 3D-ellipsoid to parameters
+        # center, axes, and transformation matrix
+        # vec is the vector whose elements are the polynomial
+        # coefficients A..J
+        # returns (center, axes, rotation matrix)
+
+        #Algebraic form: X.T * Amat * X --> polynomial form
+
+        if printMe: print('\npolynomial\n',vec)
+
+        Amat=np.array(
+        [
+        [ vec[0],     vec[3]/2.0, vec[4]/2.0, vec[6]/2.0 ],
+        [ vec[3]/2.0, vec[1],     vec[5]/2.0, vec[7]/2.0 ],
+        [ vec[4]/2.0, vec[5]/2.0, vec[2],     vec[8]/2.0 ],
+        [ vec[6]/2.0, vec[7]/2.0, vec[8]/2.0, vec[9]     ]
+        ])
+
+        if printMe: print('\nAlgebraic form of polynomial\n',Amat)
+
+        #See B.Bartoni, Preprint SMU-HEP-10-14 Multi-dimensional Ellipsoidal Fitting
+        # equation 20 for the following method for finding the center
+        A3=Amat[0:3,0:3]
+        A3inv=inv(A3)
+        ofs=vec[6:9]/2.0
+        center=-np.dot(A3inv,ofs)
+        if printMe: print('\nCenter at:',center)
+
+        # Center the ellipsoid at the origin
+        Tofs=np.eye(4)
+        Tofs[3,0:3]=center
+        R = np.dot(Tofs,np.dot(Amat,Tofs.T))
+        if printMe: print('\nAlgebraic form translated to center\n',R,'\n')
+
+        R3=R[0:3,0:3]
+        R3test=R3/R3[0,0]
+        # print('normed \n',R3test)
+        s1=-R[3, 3]
+        R3S=R3/s1
+        (el,ec)=eig(R3S)
+
+        recip=1.0/np.abs(el)
+        axes=np.sqrt(recip)
+        if printMe: print('\nAxes are\n',axes  ,'\n')
+
+        inve=inv(ec) #inverse is actually the transpose here
+        if printMe: print('\nRotation matrix\n',inve)
+        return (center,axes,inve)
+
+
+```
+
+```{python}
+import numpy as np
+import scipy.linalg
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from itertools import combinations 
+
+m = CathesianMirror('300Kmeasured', 'temp.sfc')
+print(m.name,m.filename)
+data = m.xyz_meters()
+print(data.shape)
+print(data[0])
+```
+
+```{python}
+"""remove irregular spacing from measured file"""
+```
+
+```{python}
+"""find the minumum radius each point has to its next point
+then use a histogram to select a threshold radius
+for each point create an array"""
+
+def pointradius(px1, py1, px2, py2):
+    r = np.sqrt( ( (px2-px1)**2)  + ((py2-py1)**2))
+    return r
+
+minvals = np.array(len(data[:,0]))
+
+temprads = np.array([])
+minrads = np.array([])
+
+for p in range(len(data[:,0])):
+    #print(data[p,:])
+    
+    for p2 in range(len(data[:,0])):
+    
+        r = pointradius(data[p,0], data[p,1], data[p2,0], data[p2,1])
+        temprads = np.append(temprads,r)
+    
+    #minimumradius for p
+    minrad = min(temprads[np.where(temprads > 0)])
+    #print(temprads.shape, minrad)
+    temprads = np.array([])
+    minrads = np.append(minrads, minrad)
+    
+print(minrads)
+```
+
+```{python}
+print(minrads.shape)
+import matplotlib.pyplot as plt
+plt.hist(minrads, bins='auto')
+```
+
+```{python}
+"""so this histogram looks close to what is expected
+there is a clear distinction between the sampling spacings
+so only points with rmin > 0.006 will be taken
+similar algorithim as above"""
+
+#included points
+regsampx = np.array([])
+regsampy = np.array([])
+regsampz = np.array([])
+#excluded points
+exx = np.array([])
+exy = np.array([])
+exz = np.array([])
+
+for p in range(len(data[:,0])):
+    
+    #print(minrads[p])
+    
+    if minrads[p] > 0.006:
+        regsampx = np.append(regsampx, data[p,0])
+        regsampy = np.append(regsampy, data[p,1])
+        regsampz = np.append(regsampz, data[p,2])
+    else:
+        exx = np.append(exx, data[p,0])
+        exy = np.append(exy, data[p,1])
+        exz = np.append(exz, data[p,2])
+        
+print(regsampx.shape)
+print(exx.shape)
+```
+
+```{python}
+"""plot new file and old file"""
+# %matplotlib qt
+
+fig = plt.figure(figsize=(16,10))
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(data[:,0], data[:,1], data[:,2], c='b', marker='.')
+ax.scatter(regsampx, regsampy, regsampz, c='r', marker='.')
+#ax.scatter(exx[2::3], exy[2::3], exz[2::3], c='g', marker='.')
+
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+```
+
+```{python}
+"""nor try to take every second y point from the excluded points array"""
+temprads = np.array([])
+minrads = np.array([])
+for p in range(len(exx)):
+    
+    for p2 in range(len(exx)):
+        
+        r = pointradius(0, exy[p], 0, exy[p2])
+        temprads = np.append(temprads,r)
+    
+    #minimumradius for p
+    minrad = min(temprads[np.where(temprads > 0)])
+    #print(temprads.shape, minrad)
+    temprads = np.array([])
+    minrads = np.append(minrads, minrad)
+    
+print(minrads)
+print(minrads.shape)
+```
+
+```{python}
+print(minrads.shape)
+import matplotlib.pyplot as plt
+plt.hist(minrads, bins='auto')
+```
+
+```{python}
+"""sub filtering based on excluded points"""
+#included points
+regsamp2x = np.array([])
+regsamp2y = np.array([])
+regsamp2z = np.array([])
+#excluded points
+exx2 = np.array([])
+exy2 = np.array([])
+exz2 = np.array([])
+
+for p in range(len(exx)):
+    
+    #print(minrads[p])
+    
+    if minrads[p] > 0.0002:
+        regsamp2x = np.append(regsamp2x, exx[p])
+        regsamp2y = np.append(regsamp2y, exy[p])
+        regsamp2z = np.append(regsamp2z, exz[p])
+    else:
+        exx2 = np.append(exx2, exx[p])
+        exy2 = np.append(exy2, exy[p])
+        exz2 = np.append(exz2, exz[p])
+        
+print(regsamp2x.shape)
+print(exx2.shape)
+```
+
+```{python}
+# %matplotlib qt
+
+fig = plt.figure(figsize=(16,10))
+ax = fig.add_subplot(111, projection='3d')
+
+#ax.scatter(data[:,0], data[:,1], data[:,2], c='b', marker='.')
+#ax.scatter(regsampx, regsampy, regsampz, c='r', marker='.')
+ax.scatter(exx, exy, exz, c='g', marker='.')
+ax.scatter(exx2, exy2, exz2, c='k', marker='.')
+
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+```
+
+```{python}
+"""okay try something else
+sort array based on y values, then take every second"""
+sampdata = np.array((exx, exy, exz)).T
+print(sampdata.shape)
+print(sampdata[0:5,:])
+print(sampdata[0:5,:])
+sort = sampdata[np.argsort(sampdata[:,1])]
+print(sort[0:5,:])
+sort = sort[3::4]
+```
+
+```{python}
+# %matplotlib inline
+
+fig = plt.figure(figsize=(16,10))
+#ax = fig.add_subplot(111, projection='3d')
+ax = fig.add_subplot(111)
+
+#ax.scatter(data[:,0], data[:,1], data[:,2], c='b', marker='.')
+#ax.scatter(regsampx, regsampy, regsampz, c='r', marker='.')
+#ax.scatter(exx, exy, exz, c='g', marker='.', alpha=0.5)
+#ax.scatter(sort[:,0], sort[:,1], sort[:,2], c='k', marker='.', alpha=1)
+ax.plot(regsampx, regsampy, 'r.')
+#ax.plot(exx, exy, 'g.')
+ax.plot(sort[:,0], sort[:,1], 'k.')
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+#ax.set_zlabel("z")
+```
+
+```{python}
+"""looks okay now append with sort 
+sort = sampdata[np.argsort(sampdata[:,1])]
+print(sort[0:5,:])
+sort = sort[3::4]"""
+
+newx = np.append(regsampx, sort[:,0])
+newy = np.append(regsampy, sort[:,1])
+newz = np.append(regsampz, sort[:,2])
+
+# newdata = np.array((newx, newy, newz)).T
+# print(newdata.shape)
+
+#write file
+
+m.surfacewriter("resampled","measured", newx/1000, newy/1000, newz/1000)
+```
+
+```{python}
+
+```
