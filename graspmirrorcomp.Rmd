@@ -206,7 +206,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from itertools import combinations 
 
-m = CathesianMirror('300Kmeasured', 'temp.sfc')
+m = CathesianMirror('300Kmeasured', 'measuredsurface_output')
 print(m.name,m.filename)
 data = m.xyz_meters()
 print(data.shape)
@@ -214,269 +214,72 @@ print(data[0])
 ```
 
 ```{python}
-"""remove irregular spacing from measured file"""
-```
-
-```{python}
-"""find the minumum radius each point has to its next point
-then use a histogram to select a threshold radius
-for each point create an array"""
-
-def pointradius(px1, py1, px2, py2):
-    r = np.sqrt( ( (px2-px1)**2)  + ((py2-py1)**2))
-    return r
-
-minvals = np.array(len(data[:,0]))
-
-temprads = np.array([])
-minrads = np.array([])
-
-for p in range(len(data[:,0])):
-    #print(data[p,:])
-    
-    for p2 in range(len(data[:,0])):
-    
-        r = pointradius(data[p,0], data[p,1], data[p2,0], data[p2,1])
-        temprads = np.append(temprads,r)
-    
-    #minimumradius for p
-    minrad = min(temprads[np.where(temprads > 0)])
-    #print(temprads.shape, minrad)
-    temprads = np.array([])
-    minrads = np.append(minrads, minrad)
-    
-print(minrads)
-```
-
-```{python}
-print(minrads.shape)
-import matplotlib.pyplot as plt
-plt.hist(minrads, bins='auto')
-```
-
-```{python}
-"""so this histogram looks close to what is expected
-there is a clear distinction between the sampling spacings
-so only points with rmin > 0.006 will be taken
-similar algorithim as above"""
-
-#included points
-regsampx = np.array([])
-regsampy = np.array([])
-regsampz = np.array([])
-#excluded points
-exx = np.array([])
-exy = np.array([])
-exz = np.array([])
-
-for p in range(len(data[:,0])):
-    
-    #print(minrads[p])
-    
-    if minrads[p] > 0.006:
-        regsampx = np.append(regsampx, data[p,0])
-        regsampy = np.append(regsampy, data[p,1])
-        regsampz = np.append(regsampz, data[p,2])
-    else:
-        exx = np.append(exx, data[p,0])
-        exy = np.append(exy, data[p,1])
-        exz = np.append(exz, data[p,2])
-        
-print(regsampx.shape)
-print(exx.shape)
-```
-
-```{python}
-"""plot new file and old file"""
-# %matplotlib qt
+# %matplotlib inline
 
 fig = plt.figure(figsize=(16,10))
 ax = fig.add_subplot(111, projection='3d')
+#ax = fig.add_subplot(111)
 
 ax.scatter(data[:,0], data[:,1], data[:,2], c='b', marker='.')
-ax.scatter(regsampx, regsampy, regsampz, c='r', marker='.')
-#ax.scatter(exx[2::3], exy[2::3], exz[2::3], c='g', marker='.')
-
+#ax.scatter(regsampx, regsampy, regsampz, c='r', marker='.')
+#ax.scatter(exx, exy, exz, c='b', marker='.')
+#ax.scatter(sort[:,0], sort[:,1], sort[:,2], c='k', marker='.', alpha=1)
+#ax.plot(regsampx, regsampy, 'r.')
+#ax.plot(exx, exy, 'g.')
+#ax.plot(sort[:,0], sort[:,1], 'k.')
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
 ```
 
 ```{python}
-"""nor try to take every second y point from the excluded points array"""
-temprads = np.array([])
-minrads = np.array([])
-for p in range(len(exx)):
-    
-    for p2 in range(len(exx)):
-        
-        r = pointradius(0, exy[p], 0, exy[p2])
-        temprads = np.append(temprads,r)
-    
-    #minimumradius for p
-    minrad = min(temprads[np.where(temprads > 0)])
-    #print(temprads.shape, minrad)
-    temprads = np.array([])
-    minrads = np.append(minrads, minrad)
-    
-print(minrads)
-print(minrads.shape)
-```
 
-```{python}
-print(minrads.shape)
-import matplotlib.pyplot as plt
-plt.hist(minrads, bins='auto')
-```
-
-```{python}
-"""sub filtering based on excluded points"""
-#included points
-regsamp2x = np.array([])
-regsamp2y = np.array([])
-regsamp2z = np.array([])
-#excluded points
-exx2 = np.array([])
-exy2 = np.array([])
-exz2 = np.array([])
-
-for p in range(len(exx)):
-    
-    #print(minrads[p])
-    
-    if minrads[p] > 0.0002:
-        regsamp2x = np.append(regsamp2x, exx[p])
-        regsamp2y = np.append(regsamp2y, exy[p])
-        regsamp2z = np.append(regsamp2z, exz[p])
-    else:
-        exx2 = np.append(exx2, exx[p])
-        exy2 = np.append(exy2, exy[p])
-        exz2 = np.append(exz2, exz[p])
-        
-print(regsamp2x.shape)
-print(exx2.shape)
 ```
 
 ```{python}
 # %matplotlib inline
 
 fig = plt.figure(figsize=(16,10))
-#ax = fig.add_subplot(111, projection='3d')
 ax = fig.add_subplot(111)
 
-#ax.scatter(data[:,0], data[:,1], data[:,2], c='b', marker='.')
-#ax.scatter(regsampx, regsampy, regsampz, c='r', marker='.')
-# ax.scatter(exx, exy, exz, c='g', marker='.')
-# ax.scatter(exx2, exy2, exz2, c='k', marker='.')
-ax.plot(exx, exy, 'r.')
-#ax.plot(exx2, exy2, 'k.')
-ax.plot(regsamp2x,regsamp2y, 'g.',markersize=2)
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-#ax.set_zlabel("z")
+ax.plot(data[:,1][np.where(data[:,0] == 0.0)], data[:,2][np.where(data[:,0] == 0.0)], 'b.')
 ```
 
 ```{python}
-"""okay try something else
-sort array based on y values, then take every second"""
-sampdata = np.array((exx, exy, exz)).T
-print(sampdata.shape)
-print(sampdata[0:5,:])
-print(sampdata[0:5,:])
-sort = sampdata[np.argsort(sampdata[:,2])]
-#sort.np.random.shuffle(sampdata)
-import random
-#sort = random.shuffle(sampdata, len(sampdata))
-#sort = sampdata
-#print(sort)
-#print(type(sort))
-#from sklearn.utils import shuffle
-#sort = shuffle(sampdata)
-
-print(sort[0:5,:])
-sort = sort[::3]
+m = CathesianMirror('300Kmeasured', 'temp.sfc')
+print(m.name,m.filename)
+datameas = m.xyz_meters()
+print(datameas.shape)
+print(datameas[0])
 ```
 
 ```{python}
 # %matplotlib inline
 
 fig = plt.figure(figsize=(16,10))
-#ax = fig.add_subplot(111, projection='3d')
-ax = fig.add_subplot(111)
+ax = fig.add_subplot(111, projection='3d')
+#ax = fig.add_subplot(111)
 
-#ax.scatter(data[:,0], data[:,1], data[:,2], c='b', marker='.')
+ax.scatter(datameas[:,0], datameas[:,1], datameas[:,2], c='b', marker='.')
 #ax.scatter(regsampx, regsampy, regsampz, c='r', marker='.')
 #ax.scatter(exx, exy, exz, c='b', marker='.')
 #ax.scatter(sort[:,0], sort[:,1], sort[:,2], c='k', marker='.', alpha=1)
-ax.plot(regsampx, regsampy, 'r.')
+#ax.plot(regsampx, regsampy, 'r.')
 #ax.plot(exx, exy, 'g.')
-ax.plot(sort[:,0], sort[:,1], 'k.')
+#ax.plot(sort[:,0], sort[:,1], 'k.')
 ax.set_xlabel("x")
 ax.set_ylabel("y")
-#ax.set_zlabel("z")
+ax.set_zlabel("z")
 ```
 
 ```{python}
-"""looks okay now append with sort 
-sort = sampdata[np.argsort(sampdata[:,1])]
-print(sort[0:5,:])
-sort = sort[3::4]"""
-
-newx = np.append(regsampx, sort[:,0])
-newy = np.append(regsampy, sort[:,1])
-newz = np.append(regsampz, sort[:,2])
-
-# newdata = np.array((newx, newy, newz)).T
-# print(newdata.shape)
-
-#write file
-
-m.surfacewriter("resampled","measured", newx/1000, newy/1000, newz/1000)
-```
-
-```{python}
-"""sub filtering based on excluded points"""
-#included points
-regsamp2x = np.array([])
-regsamp2y = np.array([])
-regsamp2z = np.array([])
-#excluded points
-exx2 = np.array([])
-exy2 = np.array([])
-exz2 = np.array([])
-
-for p in range(len(exx)-1):
-    
-    r = pointradius(exx[p], exy[p], exx[p+1], exy[p+1])
-    #print(r)
-    if r > 0.006:
-        regsamp2x = np.append(regsamp2x, exx[p])
-        regsamp2y = np.append(regsamp2y, exy[p])
-        regsamp2z = np.append(regsamp2z, exz[p])
-print(regsamp2x.shape)
-```
-
-```{python}
-print(exx.shape, minrads.shape)
-```
-
-```{python}
-arr = np.array((exx, exy, exz, minrads)).T
-print(arr.shape)
-sortarr = arr[np.argsort(arr[:,3])]
-print(sortarr[1249:1254,:])
-sortarr = sortarr[::5]
+# %matplotlib inline
 
 fig = plt.figure(figsize=(16,10))
-
 ax = fig.add_subplot(111)
 
-
-ax.plot(regsampx, regsampy, 'r.')
-#ax.plot(exx, exy, 'g.')
-ax.plot(sortarr[:,0], sortarr[:,1], 'k.')
-ax.set_xlabel("x")
-ax.set_ylabel("y")
+ax.plot(data[:,1][np.where(data[:,0] == 0.0)], data[:,2][np.where(data[:,0] == 0.0)], 'b.')
+ax.plot(datameas[:,1][np.where(datameas[:,0] > -0.9 and datameas[:,0] < 0.1)], datameas[:,2][np.where(datameas[:,0] > -0.9 and datameas[:,0] < 0.1)], 'r.')
 ```
 
 ```{python}
