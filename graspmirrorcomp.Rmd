@@ -403,5 +403,21 @@ np.isclose()
 ```
 
 ```{python}
+m = CathesianMirror('graspoutput', 'measuredsurface_outputV3')
+print(m.name,m.filename)
+datameas3 = m.xyz_meters()
+print(datameas3.shape)
+print(datameas3[0])
+```
+
+```{python}
+mpts = np.loadtxt('measuredsurface_outputV3', skiprows=3)
+```
+
+```{python}
+
+```
+
+```{python}
 
 ```
