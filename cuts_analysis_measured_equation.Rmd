@@ -206,6 +206,9 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from itertools import combinations 
 
+import matplotlib.pyplot as plt
+plt.rcParams.update({'font.size': 18})
+
 m = CathesianMirror('300Kmeasured', 'temp.sfc')
 print(m.name,m.filename)
 data = m.xyz_meters()
@@ -334,6 +337,106 @@ plt.plot(data[:,1][np.where(np.logical_and(data[:,0]>0.293, data[:,0]<0.298))], 
 plt.plot(data[:,1][np.where(np.logical_and(data[:,0]>0.35, data[:,0]<0.355))], diff7, 'y.')
 plt.plot(data[:,1][np.where(np.logical_and(data[:,0]>0.40, data[:,0]<0.405))], diff8, '.')
 plt.ylim(-0.0005,0.0005)
+```
+
+```{python}
+"""do some statistivscs pnon these cuts compare or do cut with error bar"""
+print((diff1/data[:,2][np.where(np.logical_and(data[:,0]>-0.0018, data[:,0]<0.003))])*100.0)
+# %matplotlib inline
+plt.figure(figsize=(14,8))
+plt.errorbar(data[:,1][np.where(np.logical_and(data[:,0]>-0.0018, data[:,0]<0.003))], data[:,2][np.where(np.logical_and(data[:,0]>-0.0018, data[:,0]<0.003))], yerr=diff1, fmt='o', capsize=5, markersize=5)
+```
+
+```{python}
+"""Do the same for the other cuts, then plot 3d surf and histogram of all points"""
+
+# %matplotlib inline
+plt.figure(figsize=(14,8))
+#plot cuts along y values
+#due to the geometry, naturally, some overplotting will occur
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>-0.23, data[:,1]<-0.22))], data[:,2][np.where(np.logical_and(data[:,1]>-0.23, data[:,1]<-0.22))], '.')
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>-0.11, data[:,1]<-0.1))], data[:,2][np.where(np.logical_and(data[:,1]>-0.11, data[:,1]<-0.1))], 'k.')
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>0.0, data[:,1]<0.01))], data[:,2][np.where(np.logical_and(data[:,1]>0.0, data[:,1]<0.01))], 'b.')
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>0.1, data[:,1]<0.11))], data[:,2][np.where(np.logical_and(data[:,1]>0.1, data[:,1]<0.11))], 'g.')
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>0.22, data[:,1]<0.23))], data[:,2][np.where(np.logical_and(data[:,1]>0.22, data[:,1]<0.23))], 'm.')
+
+#do differences between mirrors
+diff11 = data[:,2][np.where(np.logical_and(data[:,1]>-0.23, data[:,1]<-0.22))] - zpts2[np.where(np.logical_and(data[:,1]>-0.23, data[:,1]<-0.22))]
+diff22 = data[:,2][np.where(np.logical_and(data[:,1]>-0.11, data[:,1]<-0.1))] - zpts2[np.where(np.logical_and(data[:,1]>-0.11, data[:,1]<-0.1))]
+diff33 = data[:,2][np.where(np.logical_and(data[:,1]>0.0, data[:,1]<0.01))] - zpts2[np.where(np.logical_and(data[:,1]>0.0, data[:,1]<0.01))]
+diff44 = data[:,2][np.where(np.logical_and(data[:,1]>0.1, data[:,1]<0.11))] - zpts2[np.where(np.logical_and(data[:,1]>0.1, data[:,1]<0.11))]
+diff55 = data[:,2][np.where(np.logical_and(data[:,1]>0.22, data[:,1]<0.23))] - zpts2[np.where(np.logical_and(data[:,1]>0.22, data[:,1]<0.23))]
+
+plt.figure(figsize=(14,8))
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>-0.23, data[:,1]<-0.22))], diff11, '.')
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>-0.11, data[:,1]<-0.1))], diff22, 'k.')
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>0.0, data[:,1]<0.01))], diff33, 'g.')
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>0.1, data[:,1]<0.11))], diff44, 'b.')
+plt.plot(data[:,0][np.where(np.logical_and(data[:,1]>0.22, data[:,1]<0.23))], diff55, 'm.')
+plt.ylim(-0.0005,0.0005)
+
+plt.figure(figsize=(14,8))
+plt.errorbar(data[:,0][np.where(np.logical_and(data[:,1]>-0.23, data[:,1]<-0.22))], data[:,2][np.where(np.logical_and(data[:,1]>-0.23, data[:,1]<-0.22))], yerr=diff11, fmt='o', capsize=5, markersize=5)
+plt.errorbar(data[:,0][np.where(np.logical_and(data[:,1]>-0.11, data[:,1]<-0.1))], data[:,2][np.where(np.logical_and(data[:,1]>-0.11, data[:,1]<-0.1))], yerr=diff22, fmt='o', capsize=5, markersize=5, color='k')
+plt.errorbar(data[:,0][np.where(np.logical_and(data[:,1]>0.0, data[:,1]<0.01))], data[:,2][np.where(np.logical_and(data[:,1]>0.0, data[:,1]<0.01))], yerr=diff33, fmt='o', capsize=5, markersize=5, color='g')
+plt.errorbar(data[:,0][np.where(np.logical_and(data[:,1]>0.1, data[:,1]<0.11))], data[:,2][np.where(np.logical_and(data[:,1]>0.1, data[:,1]<0.11))], yerr=diff44, fmt='o', capsize=5, markersize=5, color='b')
+plt.errorbar(data[:,0][np.where(np.logical_and(data[:,1]>0.22, data[:,1]<0.23))], data[:,2][np.where(np.logical_and(data[:,1]>0.22, data[:,1]<0.23))], yerr=diff55, fmt='o', capsize=5, markersize=5, color='m')
+
+
+
+```
+
+```{python}
+"""now a histogram of errors
+first get array of differences"""
+import math
+diffs = data[:,2] - zpts2
+pdiffs = (diffs/data[:,2])*100.0
+print(diffs.shape, pdiffs.shape)
+
+plt.figure(figsize=(16,10))
+#plt.scatter(data[:,0], data[:,1], c=np.log10(abs(diffs)), cmap='rainbow')
+plt.scatter(data[:,0], data[:,1], c=diffs, cmap='rainbow')
+#cool is nice
+
+plt.xlabel('X [m] (M1 RF)')
+plt.ylabel('Y [m] (M1 RF)')
+#plt.title(r'Z Value Absolute Differences $(log{10})$')
+cbar = plt.colorbar()
+#cbar.set_label(r'$log_{10}(\delta z [m])$')
+
+
+plt.figure(figsize=(16,10))
+plt.scatter(data[:,0], data[:,1], c=np.log10(abs(diffs)), cmap='rainbow')
+#plt.scatter(data[:,0], data[:,1], c=diffs, cmap='rainbow')
+#cool is nice
+
+plt.xlabel('X [m] (M1 RF)')
+plt.ylabel('Y [m] (M1 RF)')
+#plt.title(r'Z Value Absolute Differences $(log{10})$')
+cbar = plt.colorbar()
+cbar.set_label(r'$log_{10}(\delta z [m])$')
+```
+
+```{python}
+"""histogram of all differences
+might be good to exclude the edge points"""
+bins=[-1.333e-4, -1e-4, -0.8e-4, -0.667e-4, -0.5e-4,-0.4e-4, 0,
+      0.4e-4, 0.5e-4, 0.667e-4, 0.8e-4, 1e-4, 1.333e-4, 2e-4, 4e-4]
+xlabels = ['', r'-$\lambda$/20', '', r'-$\lambda$/30', '', r'-$\lambda$/50', '0',
+          r'$\lambda/50$', '', r'$\lambda/30$', '', r'$\lambda/20$', '', r'$\lambda/10$', '']
+plt.figure(figsize=(16,10))
+#plt.hist(diffs[np.where(diffs<0.001)], bins=bins)
+plt.hist(diffs, bins=bins)
+plt.xticks(bins, xlabels)
+```
+
+```{python}
+print(diffs[np.where(diffs>0.0004)].shape)
+```
+
+```{python}
+print(max(diffs))
 ```
 
 ```{python}
