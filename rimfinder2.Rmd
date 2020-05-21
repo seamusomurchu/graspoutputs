@@ -19,7 +19,7 @@ from matplotlib import patches
 circle1 = plt.Circle((259,0), radius=297, Fill=None, color='blue')
 circle2 = plt.Circle((159,0), radius=352.5, fill=None, color='red')
 
-print circle1
+print(circle1)
 fig= plt.subplots(figsize=(15, 15))
 ax=plt.gca()
 ax.add_patch(circle1)
@@ -95,7 +95,7 @@ xpts = np.append(xpts, xpts)
 ypts = np.append(y1pts, y2pts)
 ypts = np.append(ypts, ypts*-1.0)
 pts = np.vstack((xpts, ypts)).T
-print pts.shape
+print(pts.shape)
 plt.figure()
 plt.plot(pts[:,0], pts[:,1], 'g+')
 plt.axis('equal')
@@ -118,7 +118,7 @@ def transrot(ang, x, y, z):
 z = np.zeros(len(pts[:,0]))
 z = z-49.2
 xp, yp, zp = transrot(-30, pts[:,0], pts[:,1], z)
-print xp.shape
+print(xp.shape)
 
 #points drawn from freecad m1rf need 30deg rotation to put them into circles RF
 #circles RF needs -30 deg rotation to go into m1RF
@@ -143,8 +143,9 @@ plt.show()
 
 ```{python}
 #load rim lips in m1rf from file
-# rm = np.loadtxt('realrimlips.txt')
-print rm.shape
+#rm = np.loadtxt('realrimlips.txt')
+rm = np.loadtxt('rimlips.txt')
+print(rm.shape)
 
 #do 3d plot for comparison
 import matplotlib.pyplot as plt
@@ -154,14 +155,14 @@ ax = fig.add_subplot(111, projection='3d')
 
 ax.scatter(pts[:,0], pts[:,1], z, c='g', marker='+')
 ax.scatter(xp, yp, zp, c='m', marker='+')
-ax.scatter(rm[:,0], rm[:,1], rm[:,2], c='b', marker='+')
+ax.scatter(rm[:,0], rm[:,1], c='b', marker='+')
 ```
 
 ```{python}
 # %matplotlib qt
 #plot 3d points from rim surface which is in m1rf
-m1pts = np.loadtxt('2689M1.sfc', skiprows=2)
-print m1pts.shape
+m1pts = np.loadtxt('temp.sfc', skiprows=2)
+# print m1pts.shape
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')

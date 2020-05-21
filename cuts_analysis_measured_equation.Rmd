@@ -432,7 +432,7 @@ plt.xticks(bins, xlabels)
 ```
 
 ```{python}
-print(diffs[np.where(diffs>0.0004)].shape)
+print(diffs[np.where(diffs>0.0002)].shape)
 ```
 
 ```{python}
