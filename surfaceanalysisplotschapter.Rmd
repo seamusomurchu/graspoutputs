@@ -103,10 +103,10 @@ class CathesianMirror:
         data = np.array((x,y,z))
         data = data.T
         npts = str(len(x))
-        head = "x y z points from {}\n {}".format(modeltype, npts)
+        head = "x y z points from {}\n{}".format(modeltype, npts)
         fname = filename+modeltype+".sfc"
 
-        np.savetxt(fname, data, fmt='%3.5f', delimiter=', ', header=head)
+        np.savetxt(fname, data, fmt='%3.5f', delimiter=', ', header=head, comments='')
     
     def ls_ellipsoid(self, xx,yy,zz):                                  
         #finds best fit ellipsoid. Found at http://www.juddzone.com/ALGORITHMS/least_squares_3D_ellipsoid.html
@@ -471,6 +471,13 @@ print(max(data[0,:]), max(xpts))
 ```{python}
 xrange = np.linspace(min(data[0,:]), max(data[0,:]), 3400, dtype=float)
 print(xrange)
+```
+
+```{python}
+"""save the regular surfaces to a file"""
+m.surfacewriter("regspacingeqn", "ideal", xpts, ypts, zpts2)
+"""save the regular surfaces to a file"""
+m.surfacewriter("regspacingeqn", "fitted", xpts, ypts, zm2)
 ```
 
 ```{python}
