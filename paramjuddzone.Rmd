@@ -5,7 +5,7 @@ jupyter:
       extension: .Rmd
       format_name: rmarkdown
       format_version: '1.2'
-      jupytext_version: 1.3.0
+      jupytext_version: 1.6.0
   kernelspec:
     display_name: Python 3
     language: python
@@ -115,11 +115,15 @@ def polyToParams3D(vec,printMe):                             #gets 3D parameters
 ```{python}
 #let us assume some definition of x, y and z
 #plot 3d points from rim surface which is in m1rf
-m1pts = np.loadtxt('temp.sfc', skiprows=2)
+m1pts = np.loadtxt('tempremake.txt', skiprows=0)
 #now test z return function with real x y values from the measured data
-x = m1pts[:,0]/1000
-y = m1pts[:,1]/1000
-z = m1pts[:,2]/1000
+print(m1pts[0])
+# x = m1pts[:,0]/1000
+# y = m1pts[:,1]/1000
+# z = m1pts[:,2]/1000
+x = m1pts[:,0]
+y = m1pts[:,1]
+z = m1pts[:,2]
 # x = xre[1::10]
 # y = yre[1::10]
 # z = zre[1::10]
@@ -147,6 +151,201 @@ print("rotationMatrix:", inve)
 ```
 
 ```{python}
-oldparams = #[-2.12946985e+03 -2.14752915e+03 -2.69507279e+01  1.51878244e+00  4.79717339e+01 -2.30043513e+00 -1.12499455e+00 -5.86749641e-01 -1.43627457e+03  1.00000000e-06]
+# Rearrange, move the 1 to the other side
+#  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz - 1 = 0
+#    or
+#  Ax^2 + By^2 + Cz^2 +  Dxy +  Exz +  Fyz +  Gx +  Hy +  Iz + J = 0
+#  where J = -1
+```
+
+```{python}
+#oldparams = #[-2.12946985e+03 -2.14752915e+03 -2.69507279e+01  1.51878244e+00  4.79717339e+01 -2.30043513e+00 -1.12499455e+00 -5.86749641e-01 -1.43627457e+03  1.00000000e-06]
+
+```
+
+```{python}
+newcs = [-2.12946985e+03, -2.14752915e+03, -2.69507279e+01,  1.51878244e+00, 4.79717339e+01, -2.30043513e+00,
+         -1.12499455e+00, -5.86749641e-01, -1.43627457e+03, -1.00000000e+00]
+def quadraticII(x, y, a, b, c, d, e, f, g, h, i, j):
+     
+    if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
+        delta = 0
+        print("delta < 0!")
+        z1 =  (-(e*x + f*y + i)) / (2*c)
+        z2 =  (-(e*x + f*y + i)) / (2*c)
+                    
+    else:
+        delta = (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j)
+    
+        z1 =  (-(e*x + f*y + i) + np.sqrt(delta)) / (2*c)
+        z2 =  (-(e*x + f*y + i) - np.sqrt(delta)) / (2*c)
+    return z1, z2
+
+zre1 = np.array([])
+zre2 = np.array([])
+for i in range(len(x)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(x[i], y[i], *newcs)
+    zre1 = np.append(zre1, z1)
+    zre2 = np.append(zre2, z2)
+    
+print(np.array([x, y, z, zre2]).T)
+```
+
+```{python}
+"""how good is this equaiton compared to real measured data"""
+print("lamda/20 = ", 0.002/20)
+print("lamda/4 = ", 0.002/4)
+print("lamda/14 = ", 0.002/4)
+
+def RMSE(v1,v2):
+    """simple RMSE calculation for two arrays, typically focal plane intensity"""
+    return np.sqrt(np.mean((v1-v2)**2))
+
+print("rmse", RMSE(z, zre2), "m^2",  RMSE(z, zre2)*1000, "mm^2")
+```
+
+```{python}
+# import matplotlib.pyplot as plt
+# fig = plt.figure(figsize=(12,12))
+# ax = fig.gca(projection='3d')
+# ax.scatter(x, y, z, c='r', alpha=0.2)
+# ax.scatter(x,y, zre2, s=5)
+font = {'family' : 'normal',
+        'weight' : 'normal',
+        'size'   : 20}
+plt.rc('font', **font)
+
+plt.figure(figsize=(16,8))
+
+plt.figure(figsize=(16,8))
+plt.plot(zre2 - z, '.', c='xkcd:rose', label='Fitted points and measured points residuals')
+plt.ylim([-0.00055, 0.00055])
+plt.axhline(y=0.002/4, linewidth=4, c='xkcd:cerulean', label=r'$\lambda$/4')
+plt.axhline(y=0.002/20,c='xkcd:pale purple', linewidth=4,label=r'$\lambda$/20')
+plt.axhline(y=-0.002/4, linewidth=4, c='xkcd:cerulean')
+plt.axhline(y=-0.002/20,c='xkcd:pale purple', linewidth=4)
+plt.axhline(RMSE(z, zre2),ls='--', c='xkcd:rose', linewidth=4, xmin=0.04, xmax=0.96, label=r'RMSE $= \lambda /${:.2f}'.format(0.002/RMSE(z, zre2)))
+plt.legend(loc='upper left')
+plt.xlabel('z data point [unitless]')
+plt.ylabel(r'$\Delta z$ [m]')
+#plt.savefig('/home/james/OneDrive/Thesisv5/Figures/figsc3/300kmeasuredandmeaseqn.png', facecolor='white')
+
+from matplotlib import colors
+#divnorm=colors.TwoSlopeNorm(vmin=-1*max(abs(zre2 - z)), vcenter=0, vmax=max(abs(zre2 - z)))
+divnorm=colors.TwoSlopeNorm(vcenter=0, vmin=-0.0004, vmax=0.0004)
+
+plt.figure(figsize=(16,12))
+plt.scatter(y,x, c= zre2 - z, cmap='PiYG', norm=divnorm)
+plt.colorbar(label=r'$\Delta z$ [m]')
+plt.xlabel('M1 RF x (m)')
+plt.ylabel('M1 RF y (m)')
+#plt.savefig('/home/james/OneDrive/Thesisv5/Figures/figsc3/300kscattermeastest.png', facecolor='white')
+```
+
+```{python}
+"""lets see how measured xy points work with ideal equation"""
+initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
+
+zi1ideal = np.array([])
+zi2ideal = np.array([])
+for i in range(len(x)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(x[i], y[i], *initialpars)
+    zi1ideal = np.append(zi1, z1)
+    zi2ideal = np.append(zi2, z2)
+    
+print(np.array([ z, zi2ideal]).T )
+print(zi2ideal[0], zi2ideal[3416], z[0], z[3415])
+
+# fig = plt.figure(figsize=(12,12))
+# ax = fig.gca(projection='3d')
+# ax.scatter(x, y, z, c='r', alpha=0.2)
+# ax.scatter(x,y, zre2, s=5)
+# ax.scatter(x,y, zi2, s=5)
+
+plt.figure(figsize=(16,8))
+plt.plot(zi2ideal[0:3416] - z, '.', color='xkcd:blue green', label='Ideal - Measured 300 K')
+#plt.plot(z - zi2, '.', label='measuredz - ideal and fitted')
+plt.ylim([-0.00055, 0.00055])
+plt.axhline(y=0.002/4, linewidth=4, c='xkcd:cerulean', label=r'$\lambda$/4')
+plt.axhline(y=0.002/20,c='xkcd:pale purple', linewidth=4,label=r'$\lambda$/20')
+plt.axhline(y=-0.002/4, linewidth=4, c='xkcd:cerulean')
+plt.axhline(y=-0.002/20,c='xkcd:pale purple', linewidth=4)
+plt.axhline(RMSE(zi2ideal[0:3416], z),ls='--', c='xkcd:blue green', xmin=0.04, xmax=0.96, linewidth=4, 
+            label=r'RMSE $= \lambda /${:.2f}'.format(0.002/RMSE(z, zi2ideal[0:3416])))
+plt.legend(loc='upper right')
+plt.xlabel('z data point [unitless]')
+plt.ylabel(r'$\Delta z$ [m]')
+plt.savefig('/home/james/OneDrive/Thesisv5/Figures/figsc3/300kidealmeasured.png', facecolor='white')
+```
+
+```{python}
+"""for m2"""
+#let us assume some definition of x, y and z
+#plot 3d points from rim surface which is in m1rf
+m2pts = np.loadtxt('tempremakem2.txt', skiprows=0)
+#now test z return function with real x y values from the measured data
+print(m2pts[0])
+x = m2pts[:,0]/1000
+y = m2pts[:,1]/1000
+z = m2pts[:,2]/1000
+
+#get convex hull
+surface  = np.stack((x,y,z), axis=-1)
+hullV    = ConvexHull(surface)
+lH       = len(hullV.vertices)
+hull     = np.zeros((lH,3))
+for i in range(len(hullV.vertices)):
+    hull[i] = surface[hullV.vertices[i]]
+hull     = np.transpose(hull)         
+
+print(hull.shape)
+
+#fit ellipsoid on convex hull
+eansa            = ls_ellipsoid(hull[0],hull[1],hull[2]) #get ellipsoid polynomial coefficients
+print("coefficients:"  , eansa)
+center,axes,inve = polyToParams3D(eansa,False)   #get ellipsoid 3D parameters
+print("center:"        , center)
+print("axes:"          , axes)
+print("rotationMatrix:", inve)
+```
+
+```{python}
+m2eq = [ 7.15118023e+06,  8.02224186e+06,  7.63993556e+06,  1.30532844e+03,  7.36650479e+05,
+        7.30613037e+03,  1.86569791e+03,  2.14835728e+00, -9.08895573e+02, -1.00000000e+00]
+zre1 = np.array([])
+zre2 = np.array([])
+for i in range(len(x)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(x[i], y[i], *m2eq)
+    zre1 = np.append(zre1, z1)
+    zre2 = np.append(zre2, z2)
+    
+print(np.array([x, y, z, zre2]).T)
+```
+
+```{python}
+fig = plt.figure(figsize=(12,12))
+ax = fig.gca(projection='3d')
+ax.scatter(x, y, z, c='r', alpha=0.2)
+ax.scatter(x,y, zre2, s=5)
+
+plt.figure(figsize=(12,12))
+plt.plot(z - zre2, 'k.')
+plt.ylim([-0.01, 0.01])
+
+"""how good is this equaiton compared to real measured data"""
+print("lamda/20 = ", 0.002/20)
+print("lamda/4 = ", 0.002/4)
+
+def RMSE(v1,v2):
+    """simple RMSE calculation for two arrays, typically focal plane intensity"""
+    return np.sqrt(np.mean((v1-v2)**2))
+
+print("rmse", RMSE(z, zre2), "m^2",  RMSE(z, zre2)*1000, "mm^2")
+```
+
+```{python}
 
 ```

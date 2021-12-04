@@ -22,6 +22,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import matplotlib.pyplot as plt
+import pandas as pd
 
 def quadraticII(x, y, a, b, c, d, e, f, g, h, i, j):
      
@@ -45,11 +46,26 @@ def quadratic(a):
 ```
 
 ```{python}
+m1file0 = '/home/james/Documents/MirrorPoints/FI mirrors datafiles/M2_orig_bfit_fori_refs.dat'
+m1pts = pd.read_csv(m1file0, skiprows=8, sep=' ', usecols=[1,3,5], names=['x','y','z'], decimal=",")
+print(m1pts, type(m1pts.astype('float')))
+print(m1pts['x'])
+
+xre = m1pts['x']/1000
+yre = m1pts['y']/1000
+zre = m1pts['z']/1000
+```
+
+```{python}
+np.savetxt('tempremakem2.txt', np.array([xre, yre, zre]).T)
+```
+
+```{python}
 #plot 3d points from rim surface which is in m1rf
-m1pts = np.loadtxt('temp.sfc', skiprows=2)
+#m1pts = np.loadtxt('temp.sfc', skiprows=2)
 #now test z return function with real x y values from the measured data
-xre = m1pts[:,0]/1000
-yre = m1pts[:,1]/1000
+# xre = m1pts[:,0]/1000
+# yre = m1pts[:,1]/1000
 # xre = xre[1::5]
 # yre = yre[1::5]
 print(xre.shape,yre.shape)
@@ -59,14 +75,28 @@ plt.show()
 zre1 = np.array([])
 zre2 = np.array([])
 
-initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
+#initialpars = (-0.00274866, -0.00274866, -7e-5, 1.4e-23, 4.8e-22, 1e-22, 5.6e-19, 1.8e-20, -0.00183404, -1e-6)
 #initial pars vars = A      B           C       D        E         F      G        H        I            J
+m2pars = (0.991323, 1.114128, 1.092735, 0, 0.102517, 0, 0.258740, 0, -0.107996, -0.136285)
 
 for i in range(len(xre)):
     #print(xre[i], yre[i])    
-    z1, z2 = quadraticII(xre[i], yre[i], *initialpars)
+    z1, z2 = quadraticII(xre[i], yre[i], *m2pars)
     zre1 = np.append(zre1, z1)
     zre2 = np.append(zre2, z2)
+```
+
+```{python}
+"""see if z points return good"""
+#print(np.array([m1pts['x'], m1pts['y'], m1pts['y'], zre1*1000, zre2*1000]).T)
+print(np.array([m1pts['z'], zre2*1000]).T)
+
+plt.figure(figsize=(16,8))
+plt.plot(m1pts['z'], '.')
+plt.plot(zre2*1000, '.')
+plt.figure(figsize=(16,8))
+plt.plot(m1pts['z'] - zre2*1000, 'k.')
+plt.ylim(-0.25,0.25)
 ```
 
 ```{python}
@@ -99,7 +129,7 @@ if order == 1:
     # best-fit linear plane
     A = np.c_[data[:,0], data[:,1], np.ones(data.shape[0])]
     C,_,_,_ = scipy.linalg.lstsq(A, data[:,2])    # coefficients
-    
+    print("C{}".format(C))
     # evaluate it on grid
     Z = C[0]*X + C[1]*Y + C[2]
     
@@ -133,8 +163,8 @@ elif order == 3:
     print("C proper 3D {}".format(C))
     # f(x, y, z) = ax**2 + by**2 + cz**2 + dxy+ exz + fyz + gx + hy + iz + j
     for i in range(G.shape[0]):
-        print(quadratic(G[i,:]), zre2)
-        #z = quadratic(G[i,:])
+        print(quadratic(G[i,:]), zre2[i])
+        z = quadratic(G[i,:])
 # This can be used then:
 # def quadratic(a):
 #     dim = a.shape[0]
@@ -145,8 +175,8 @@ elif order == 3:
     
 #reformXYZ for scatter plot    
 # plot points and fitted surface
-# %matplotlib qt
-fig = plt.figure()
+# %matplotlib inline
+fig = plt.figure(figsize=(10,10))
 ax = fig.gca(projection='3d')
 ax.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.2)
 ax.scatter3D(X,Y,Z)
@@ -160,11 +190,45 @@ plt.show()
 ```
 
 ```{python}
-print(X.shape,Y.shape,Z.shape)
+#print(X.shape,Y.shape,Z.shape)
+print(z.shape)
 ```
 
 ```{python}
-zr = np.reshape(Z,len(Z[0]**2))
+#zr = np.reshape(Z,len(Z[0]**2))
+print(C, type(C))
+```
+
+```{python}
+"""now take the solved pars and fit points
+create some x and y points reg spacing"""
+solvedpars=(-2.72806352e-01, -2.72806352e-01, -6.94754705e-03,  1.93765680e-16,
+            1.03802213e-14,  9.44763157e-16, -3.18068432e-16, -4.01287837e-17,  8.17970297e-01, -9.92506721e-05)
+print(*solvedpars)
+print(C/100)
+opars = [-2.12946985e+03, -2.14752915e+03, -2.69507279e+01,  1.51878244e+00,4.79717339e+01, -2.30043513e+00, -1.12499455e+00, -5.86749641e-01, -1.43627457e+03,  1.00000000e-06]
+
+#result = [int(x) for x, in solvedpars]
+#xpts = np.linspace(min(xre), max(xre), 100)
+#ypts = np.linspace(min(yre), max(yre), 100)
+
+"""actually take same dat points and find corresponding zs"""
+solvedz1 = np.array([])
+solvedz2 = np.array([])
+for i in range(len(xre)):
+    #print(xre[i], yre[i])    
+    z1s, z2s = quadratic(xre[i], yre[i], *solvedpars)
+    solvedz1 = np.append(solvedz1, z1s)
+    solvedz2 = np.append(solvedz2, z2s)
+```
+
+```{python}
+print("measured z, ideal eq z, solved eq z ")
+print(np.array([m1pts['z'], zre2*1000, solvedz2]).T)
+```
+
+```{python}
+
 ```
 
 ```{python}
