@@ -5,7 +5,7 @@ jupyter:
       extension: .Rmd
       format_name: rmarkdown
       format_version: '1.2'
-      jupytext_version: 1.6.0
+      jupytext_version: 1.3.0
   kernelspec:
     display_name: Python 3
     language: python
@@ -165,7 +165,7 @@ print("rotationMatrix:", inve)
 
 ```{python}
 newcs = [-2.12946985e+03, -2.14752915e+03, -2.69507279e+01,  1.51878244e+00, 4.79717339e+01, -2.30043513e+00,
-         -1.12499455e+00, -5.86749641e-01, -1.43627457e+03, -1.00000000e+00]
+         -1.12499455e+00, -5.86749641e-01, -1.43627457e+03, -1.00000000e+00] # this is 300 K juddzone of fitted points
 def quadraticII(x, y, a, b, c, d, e, f, g, h, i, j):
      
     if (e*x + f*y + i)**2 - 4*c*(a*(x)**2 + b*(y)**2 + d*x*y + g*x + h*y + j) < 0.0:
@@ -193,6 +193,20 @@ print(np.array([x, y, z, zre2]).T)
 ```
 
 ```{python}
+idealfit300k = [-0.00274866, -0.00274866, -0.00007089287, 1.420595E-023, 4.792501E-021, 1.016066E-022, 
+                5.587171E-019, 1.709066E-020, -0.00183404, -1e-6]
+
+#make 300 k ideal data
+zre1300k = np.array([])
+zre2300k = np.array([])
+for i in range(len(x)):
+    #print(xre[i], yre[i])    
+    z1, z2 = quadraticII(x[i], y[i], *idealfit300k)
+    zre1300k = np.append(zre1300k, z1)
+    zre2300k = np.append(zre2300k, z2)
+```
+
+```{python}
 """how good is this equaiton compared to real measured data"""
 print("lamda/20 = ", 0.002/20)
 print("lamda/4 = ", 0.002/4)
@@ -206,7 +220,7 @@ print("rmse", RMSE(z, zre2), "m^2",  RMSE(z, zre2)*1000, "mm^2")
 ```
 
 ```{python}
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 # fig = plt.figure(figsize=(12,12))
 # ax = fig.gca(projection='3d')
 # ax.scatter(x, y, z, c='r', alpha=0.2)
@@ -219,28 +233,42 @@ plt.rc('font', **font)
 plt.figure(figsize=(16,8))
 
 plt.figure(figsize=(16,8))
-plt.plot(zre2 - z, '.', c='xkcd:rose', label='Fitted points and measured points residuals')
+
 plt.ylim([-0.00055, 0.00055])
 plt.axhline(y=0.002/4, linewidth=4, c='xkcd:cerulean', label=r'$\lambda$/4')
 plt.axhline(y=0.002/20,c='xkcd:pale purple', linewidth=4,label=r'$\lambda$/20')
 plt.axhline(y=-0.002/4, linewidth=4, c='xkcd:cerulean')
 plt.axhline(y=-0.002/20,c='xkcd:pale purple', linewidth=4)
-plt.axhline(RMSE(z, zre2),ls='--', c='xkcd:rose', linewidth=4, xmin=0.04, xmax=0.96, label=r'RMSE $= \lambda /${:.2f}'.format(0.002/RMSE(z, zre2)))
-plt.legend(loc='upper left')
+
+plt.plot(z - zre2300k, '.', c='xkcd:blue green', label='300 K ideal points and 300 K measured points residuals')
+plt.plot(z - zre2, '.', c='xkcd:rose', label='300 K fitted points and 300 K measured points residuals')
+
+plt.axhline(RMSE(z[:-4], zre2300k[:-4]),ls='--', c='xkcd:blue green', linewidth=4, xmin=0.04, xmax=0.96, 
+            label=r'RMSE $= \lambda /${:.2f}'.format(0.002/RMSE(z[:-4], zre2300k[:-4])))
+plt.axhline(RMSE(z[:-4], zre2[:-4]),ls='--', c='xkcd:rose', linewidth=4, xmin=0.04, xmax=0.96, 
+            label=r'RMSE $= \lambda /${:.2f}'.format(0.002/RMSE(z[:-4], zre2[:-4])))
+
+plt.legend(loc='lower left')
 plt.xlabel('z data point [unitless]')
 plt.ylabel(r'$\Delta z$ [m]')
-#plt.savefig('/home/james/OneDrive/Thesisv5/Figures/figsc3/300kmeasuredandmeaseqn.png', facecolor='white')
+plt.ylim([-0.001,0.0006])
+plt.savefig('/home/james/OneDrive/thesis_laptop/Figures/figsc3/300kmeasuredandmeaseqnv2.png', facecolor='white')
 
 from matplotlib import colors
 #divnorm=colors.TwoSlopeNorm(vmin=-1*max(abs(zre2 - z)), vcenter=0, vmax=max(abs(zre2 - z)))
-divnorm=colors.TwoSlopeNorm(vcenter=0, vmin=-0.0004, vmax=0.0004)
+#divnorm=colors.TwoSlopeNorm(vcenter=0, vmin=-0.0004, vmax=0.0004)
+divnorm=colors.DivergingNorm(vcenter=0, vmin=-0.0004, vmax=0.0004)
 
 plt.figure(figsize=(16,12))
-plt.scatter(y,x, c= zre2 - z, cmap='PiYG', norm=divnorm)
+plt.scatter(y,x, c= z - zre2300k, cmap='RdBu', norm=divnorm)
 plt.colorbar(label=r'$\Delta z$ [m]')
 plt.xlabel('M1 RF x (m)')
 plt.ylabel('M1 RF y (m)')
-#plt.savefig('/home/james/OneDrive/Thesisv5/Figures/figsc3/300kscattermeastest.png', facecolor='white')
+plt.savefig('/home/james/OneDrive/thesis_laptop/Figures/figsc3/300kscattermeastestv2.png', facecolor='white')
+```
+
+```{python}
+
 ```
 
 ```{python}
@@ -277,7 +305,7 @@ plt.axhline(RMSE(zi2ideal[0:3416], z),ls='--', c='xkcd:blue green', xmin=0.04, x
 plt.legend(loc='upper right')
 plt.xlabel('z data point [unitless]')
 plt.ylabel(r'$\Delta z$ [m]')
-plt.savefig('/home/james/OneDrive/Thesisv5/Figures/figsc3/300kidealmeasured.png', facecolor='white')
+#plt.savefig('/home/james/OneDrive/Thesisv5/Figures/figsc3/300kidealmeasured.png', facecolor='white')
 ```
 
 ```{python}
